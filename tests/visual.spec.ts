@@ -10,6 +10,7 @@ test("desktop journey, incident and recovery are coherent", async ({ page }) => 
       name: "A customer can enquire successfully, but nobody owns the reply.",
     }),
   ).toBeVisible();
+  await page.waitForTimeout(450);
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
@@ -56,6 +57,7 @@ test("mobile navigation exposes the full product", async ({ page }) => {
   await expect(page.getByRole("navigation")).toBeVisible();
   await page.getByRole("button", { name: "Client report" }).click();
   await expect(page.getByRole("heading", { name: "Weekly assurance report" })).toBeVisible();
+  await page.waitForTimeout(450);
 
   await page.screenshot({
     path: "test-results/mobile-report.png",
