@@ -11,7 +11,6 @@ import {
   Bot,
   Check,
   CheckCircle2,
-  ChevronDown,
   CircleDot,
   Clock3,
   FileCheck2,
@@ -26,11 +25,9 @@ import {
   Route,
   ShieldCheck,
   Sparkles,
-  Users,
   WandSparkles,
 } from "lucide-react";
 import {
-  clients,
   contractChecks,
   degradedSteps,
   healthySteps,
@@ -666,15 +663,12 @@ function Report() {
 
 export default function WatchdogApp() {
   const [view, setView] = useState<View>("overview");
-  const [clientOpen, setClientOpen] = useState(false);
   const [incidentOpen, setIncidentOpen] = useState(false);
   const [scenario, setScenario] = useState<"degraded" | "healthy">("degraded");
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(8);
 
-  const selectedClient = clients[0];
-
-  const runVerification = async () => {
+  const runJourneyCheck = async (mode: "degraded" | "healthy") => {
     if (running) return;
     setRunning(true);
     setProgress(0);
@@ -702,9 +696,19 @@ export default function WatchdogApp() {
     await new Promise((resolve) => window.setTimeout(resolve, 180));
     setRunning(false);
 
-    if (scenario === "degraded") {
+    if (mode === "degraded") {
       window.setTimeout(() => setIncidentOpen(true), 260);
     }
+  };
+
+  const runVerification = () => {
+    void runJourneyCheck(scenario);
+  };
+
+  const replayRecoveredJourney = () => {
+    setIncidentOpen(false);
+    setScenario("healthy");
+    window.setTimeout(() => void runJourneyCheck("healthy"), 240);
   };
 
   const content = useMemo(() => {
@@ -780,53 +784,14 @@ export default function WatchdogApp() {
               <div className="lg:hidden">
                 <AppLogo />
               </div>
-              <div className="relative hidden lg:block">
-                <button
-                  onClick={() => setClientOpen((value) => !value)}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-left shadow-sm transition hover:border-slate-300"
-                >
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-                    <Users size={15} />
-                  </span>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Client workspace</p>
-                    <p className="text-sm font-semibold text-slate-800">{selectedClient.name}</p>
-                  </div>
-                  <ChevronDown size={15} className="ml-4 text-slate-400" />
-                </button>
-                <AnimatePresence>
-                  {clientOpen ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 6, scale: 1 }}
-                      exit={{ opacity: 0, y: -5, scale: 0.98 }}
-                      transition={spring}
-                      className="absolute left-0 top-full z-30 w-[300px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_55px_rgba(15,23,42,0.14)]"
-                    >
-                      {clients.map((client, index) => (
-                        <button
-                          key={client.name}
-                          onClick={() => setClientOpen(false)}
-                          className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left transition hover:bg-slate-50"
-                        >
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800">{client.name}</p>
-                            <p className="mt-1 text-xs text-slate-400">{index === 0 ? "3 active journeys" : "2 active journeys"}</p>
-                          </div>
-                          <span
-                            className={
-                              client.tone === "attention"
-                                ? "text-xs font-semibold text-amber-700"
-                                : "text-xs font-semibold text-emerald-700"
-                            }
-                          >
-                            {client.status}
-                          </span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
+              <div className="hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-sm lg:flex">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-[12px] font-bold text-blue-700">
+                  BH
+                </span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Demo client</p>
+                  <p className="text-sm font-semibold text-slate-800">BrightHome Cleaning</p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -846,12 +811,48 @@ export default function WatchdogApp() {
             </div>
           </header>
 
-          <main className="mx-auto max-w-[1500px] px-4 py-6 md:px-7 md:py-8">
+          <main className="mx-auto max-w-[1500px] px-4 pb-28 pt-6 md:px-7 md:pb-28 md:pt-8 lg:pb-8">
             <AnimatePresence mode="wait">{content}</AnimatePresence>
           </main>
         </div>
 
-        <IncidentDrawer open={incidentOpen} onClose={() => setIncidentOpen(false)} />
+        <nav className="fixed bottom-3 left-3 right-3 z-30 grid grid-cols-5 rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-[0_18px_55px_rgba(15,23,42,0.16)] backdrop-blur-xl lg:hidden">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = view === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setView(item.id)}
+                aria-label={item.label}
+                className={
+                  active
+                    ? "flex h-12 flex-col items-center justify-center gap-1 rounded-xl bg-slate-950 text-white"
+                    : "flex h-12 flex-col items-center justify-center gap-1 rounded-xl text-slate-400 transition hover:bg-slate-50 hover:text-slate-800"
+                }
+              >
+                <Icon size={16} />
+                <span className="text-[10px] font-semibold leading-none">
+                  {item.id === "overview"
+                    ? "Home"
+                    : item.id === "journeys"
+                      ? "Journeys"
+                      : item.id === "runs"
+                        ? "Runs"
+                        : item.id === "contract"
+                          ? "Contract"
+                          : "Report"}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <IncidentDrawer
+          open={incidentOpen}
+          onClose={() => setIncidentOpen(false)}
+          onReplay={replayRecoveredJourney}
+        />
       </div>
     </MotionConfig>
   );
