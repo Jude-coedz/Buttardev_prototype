@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertTriangle,
@@ -14,6 +15,7 @@ import {
 type IncidentDrawerProps = {
   open: boolean;
   onClose: () => void;
+  onReplay: () => void;
 };
 
 const drawerVariants = {
@@ -45,7 +47,25 @@ const itemVariants = {
   },
 };
 
-export function IncidentDrawer({ open, onClose }: IncidentDrawerProps) {
+export function IncidentDrawer({ open, onClose, onReplay }: IncidentDrawerProps) {
+  const [copied, setCopied] = useState(false);
+
+  const copyEvidence = async () => {
+    const evidence = [
+      "Journey Watchdog incident WD-1842",
+      "Failure: Owner assignment failed",
+      "Expected: owner_id = saim.birmingham",
+      "Received: owner_id = null",
+      "Last change: CRM mapping updated 47m ago",
+      "Likely cause: assignee_id renamed upstream",
+      "Recovery: fix owner mapping and replay from routing with the same idempotency key",
+    ].join("\n");
+
+    await navigator.clipboard?.writeText(evidence);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
   return (
     <AnimatePresence>
       {open ? (
@@ -148,13 +168,19 @@ export function IncidentDrawer({ open, onClose }: IncidentDrawerProps) {
                     Fix the owner mapping, then replay from the routing step. Watchdog reuses the same test lead instead of creating a duplicate CRM record.
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <button className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">
+                    <button
+                      onClick={onReplay}
+                      className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+                    >
                       <RotateCcw size={15} />
-                      Replay from routing
+                      Apply fix & replay
                     </button>
-                    <button className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10">
-                      <Copy size={15} />
-                      Copy evidence
+                    <button
+                      onClick={copyEvidence}
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                    >
+                      {copied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
+                      {copied ? "Copied" : "Copy evidence"}
                     </button>
                   </div>
                 </div>
