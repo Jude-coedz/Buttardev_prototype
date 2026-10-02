@@ -23,3 +23,19 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser verification
+        run: npm run test:visual
+
+      - name: Upload visual proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: journey-watchdog-visuals
+          path: |
+            test-results/*.png
+            test-results/**/*.zip
+          if-no-files-found: warn
