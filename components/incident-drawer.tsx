@@ -131,7 +131,7 @@ export function IncidentDrawer({ open, onClose }: IncidentDrawerProps) {
                       className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white px-3.5 py-3"
                     >
                       <ShieldCheck className="mt-0.5 text-emerald-600" size={17} />
-                      <span className="text-sm leading-5 text-slate-650">{item}</span>
+                      <span className="text-sm leading-5 text-slate-600">{item}</span>
                     </div>
                   ))}
                 </div>
