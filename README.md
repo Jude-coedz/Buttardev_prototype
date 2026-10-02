@@ -75,6 +75,29 @@ The weekly report is intentionally client-readable. The larger opportunity is tu
 - **Preview after fix** switches to the repaired journey.
 - Navigation exposes journey contracts, run history and a client-facing weekly report.
 
+## Automation architecture
+
+The visible journey is backed by a server-side synthetic runner at:
+
+```text
+POST /api/watchdog/run
+```
+
+The runner models the same boundaries a real service-business automation would need:
+
+```text
+synthetic webhook
+  -> qualification adapter
+  -> idempotent CRM upsert
+  -> routing rule
+  -> guarded team notification
+  -> guarded follow-up task
+```
+
+The degraded fixture intentionally returns no owner from routing. That failure prevents the alert and follow-up adapters from running. A healthy replay keeps the same idempotency key, which demonstrates the recovery principle without duplicating the CRM record.
+
+This keeps the demo deterministic and safe while making the failure handling, guard conditions and replay semantics inspectable in code.
+
 ## Stack
 
 - Next.js 16.3.8
