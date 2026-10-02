@@ -673,31 +673,54 @@ export default function WatchdogApp() {
     setRunning(true);
     setProgress(0);
 
-    animate(".journey-node", {
-      scale: [1, 1.018, 1],
-      delay: stagger(120),
-      duration: 560,
-      ease: "out(3)",
-    });
+    try {
+      const response = await fetch("/api/watchdog/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario: mode }),
+      });
 
-    animate(".journey-connector", {
-      scaleX: [0.05, 1],
-      opacity: [0.15, 0.55, 0.25],
-      duration: 2400,
-      ease: "inOutQuad",
-    });
+      if (!response.ok) {
+        throw new Error(`Watchdog run failed with status ${response.status}`);
+      }
 
-    for (let index = 0; index < 6; index += 1) {
-      setProgress(index);
-      await new Promise((resolve) => window.setTimeout(resolve, 430));
-    }
+      const result = (await response.json()) as {
+        status: "passed" | "failed";
+        incident: unknown | null;
+      };
 
-    setProgress(7);
-    await new Promise((resolve) => window.setTimeout(resolve, 180));
-    setRunning(false);
+      setScenario(result.status === "passed" ? "healthy" : "degraded");
 
-    if (mode === "degraded") {
-      window.setTimeout(() => setIncidentOpen(true), 260);
+      animate(".journey-node", {
+        scale: [1, 1.018, 1],
+        delay: stagger(120),
+        duration: 560,
+        ease: "out(3)",
+      });
+
+      animate(".journey-connector", {
+        scaleX: [0.05, 1],
+        opacity: [0.15, 0.55, 0.25],
+        duration: 2400,
+        ease: "inOutQuad",
+      });
+
+      for (let index = 0; index < 6; index += 1) {
+        setProgress(index);
+        await new Promise((resolve) => window.setTimeout(resolve, 430));
+      }
+
+      setProgress(7);
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
+      setRunning(false);
+
+      if (result.incident) {
+        window.setTimeout(() => setIncidentOpen(true), 260);
+      }
+    } catch (error) {
+      console.error(error);
+      setProgress(8);
+      setRunning(false);
     }
   };
 
