@@ -23,7 +23,8 @@ function stepIndex(pathname: string) {
 export function DemoStepbar() {
   const pathname = usePathname();
   const architectureActive = pathname.startsWith("/architecture");
-  const current = architectureActive ? -1 : stepIndex(pathname);
+  const useCasesPage = pathname.startsWith("/use-cases");
+  const current = architectureActive || useCasesPage ? -1 : stepIndex(pathname);
 
   return (
     <div className="sticky top-0 z-50 border-b border-white/10 bg-[#111318] text-white shadow-[0_8px_28px_rgba(17,19,24,.12)]">
@@ -66,30 +67,19 @@ export function DemoStepbar() {
           </div>
         </nav>
 
-        <div className="hidden shrink-0 items-center gap-2 md:flex">
+        {!useCasesPage ? (
           <Link
             href="/architecture"
             className={
               architectureActive
-                ? "inline-flex h-9 items-center gap-2 rounded-lg bg-white px-3.5 text-[13px] font-semibold text-[#111318]"
-                : "inline-flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3.5 text-[13px] font-semibold text-white/72 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+                ? "hidden h-9 shrink-0 items-center gap-2 rounded-lg bg-white px-3.5 text-[13px] font-semibold text-[#111318] md:inline-flex"
+                : "hidden h-9 shrink-0 items-center gap-2 rounded-lg border border-white/15 px-3.5 text-[13px] font-semibold text-white/72 transition hover:border-white/30 hover:bg-white/10 hover:text-white md:inline-flex"
             }
           >
             <Box size={14} />
             3D model
           </Link>
-          <Link
-            href="/use-cases"
-            className={
-              useCasesActive
-                ? "inline-flex h-9 items-center gap-2 rounded-lg bg-white px-3.5 text-[13px] font-semibold text-[#111318]"
-                : "inline-flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3.5 text-[13px] font-semibold text-white/72 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
-            }
-          >
-            <Shapes size={14} />
-            Use cases
-          </Link>
-        </div>
+        ) : null}
       </div>
     </div>
   );
