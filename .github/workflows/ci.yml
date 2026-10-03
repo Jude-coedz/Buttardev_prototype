@@ -7,9 +7,9 @@ on:
     branches: [rebuild/watchdog-story-v2]
 
 jobs:
-  build:
+  build-and-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,3 +24,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser verification
+        run: npm run test:visual
