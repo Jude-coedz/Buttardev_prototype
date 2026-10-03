@@ -77,7 +77,7 @@ export function DemoStepbar() {
             }
           >
             <Box size={14} />
-            3D model
+            System anatomy
           </Link>
         ) : null}
       </div>
