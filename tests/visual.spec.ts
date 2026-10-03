@@ -68,16 +68,16 @@ test("the architecture route is a stable GSAP product teardown with active navig
   await expect(page.getByText("Synthetic probe", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Peel next layer" }).click();
-  await expect(page.getByText("Handoff observer")).toBeVisible();
+  await expect(page.getByText("Handoff observer", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Peel next layer" }).click();
-  await expect(page.getByText("Contract engine")).toBeVisible();
+  await expect(page.getByText("Contract engine", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Peel next layer" }).click();
-  await expect(page.getByText("Guard layer")).toBeVisible();
+  await expect(page.getByText("Guard layer", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Peel next layer" }).click();
-  await expect(page.getByText("Evidence + replay")).toBeVisible();
+  await expect(page.getByText("Evidence + replay", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Watchdog use cases" })).toBeVisible();
 
   await page.getByRole("button", { name: "Reset core" }).click();
