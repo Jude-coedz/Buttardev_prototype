@@ -82,7 +82,7 @@ test("the architecture route is a stable GSAP product teardown with active navig
 
   await page.getByRole("button", { name: "Reset core" }).click();
   await page.getByRole("button", { name: "Trace failed journey" }).click();
-  await expect(page.getByRole("button", { name: "Trace failed journey" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Tracing failure" })).toBeDisabled();
 
   await page.waitForTimeout(5200);
   await expect(page.getByRole("button", { name: "Trace failed journey" })).toBeEnabled();
