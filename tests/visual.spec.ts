@@ -54,7 +54,7 @@ test("the architecture page is a live 3D teardown with a path to use cases", asy
   await expect(page.getByRole("heading", { name: "Take the Watchdog core apart." })).toBeVisible();
   await expect(page.locator("canvas")).toBeVisible();
   await expect(page.getByText("Selected physical module")).toBeVisible();
-  await expect(page.getByText("Contract engine")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Contract engine" })).toBeVisible();
 
   await page.getByRole("button", { name: "Reassemble core" }).click();
   await expect(page.getByRole("button", { name: "Explode core" })).toBeVisible();
@@ -86,7 +86,7 @@ test("use cases provide runnable mimicked automations", async ({ page }) => {
 
   await page.getByRole("button", { name: "Run this automation" }).click();
   await expect(page.getByText("approval_count = 1")).toBeVisible({ timeout: 7_000 });
-  await expect(page.getByText("Prevents unauthorized or prematurely released payments.")).toBeVisible();
+  await expect(page.getByText("Prevents unauthorized or prematurely released payments.").last()).toBeVisible();
 });
 
 test("100 percent desktop zoom keeps the first interaction in view", async ({ page }) => {
