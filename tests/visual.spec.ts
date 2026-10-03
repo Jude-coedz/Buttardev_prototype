@@ -51,38 +51,41 @@ test("the full Watchdog story stays understandable when the user controls the pa
   await expect(page.getByText("Saim · Birmingham")).toBeVisible();
 });
 
-test("the architecture route is an Anime.js interactive cube with stable navigation", async ({ page }) => {
+test("the architecture route is a stable GSAP product teardown with active navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/architecture");
 
   await expect(
-    page.getByRole("heading", { name: "Rotate the cube to understand the Watchdog system." }),
+    page.getByRole("heading", { name: "Peel the system apart and follow one failed journey through it." }),
   ).toBeVisible();
 
   await expect(page.locator("canvas")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "3D" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Use cases", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "WATCHDOG face" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "SYNTHETIC PROBE" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await page.getByRole("button", { name: "Peel next layer" }).click();
   await expect(page.getByText("Synthetic probe")).toBeVisible();
 
-  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await page.getByRole("button", { name: "Peel next layer" }).click();
   await expect(page.getByText("Handoff observer")).toBeVisible();
 
-  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await page.getByRole("button", { name: "Peel next layer" }).click();
   await expect(page.getByText("Contract engine")).toBeVisible();
 
-  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await page.getByRole("button", { name: "Peel next layer" }).click();
   await expect(page.getByText("Guard layer")).toBeVisible();
 
-  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await page.getByRole("button", { name: "Peel next layer" }).click();
   await expect(page.getByText("Evidence + replay")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Watchdog use cases" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Use cases", exact: true }).click();
-  await expect(page).toHaveURL(/\/use-cases/);
-  await expect(page.getByRole("link", { name: "Use cases", exact: true })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("button", { name: "Reset core" }).click();
+  await page.getByRole("button", { name: "Trace failed journey" }).click();
+  await expect(page.getByRole("button", { name: "Trace failed journey" })).toBeDisabled();
+
+  await page.waitForTimeout(5200);
+  await expect(page.getByRole("button", { name: "Trace failed journey" })).toBeEnabled();
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
