@@ -41,21 +41,21 @@ export function CrmLeadView() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1480px] px-4 py-10 md:px-7 md:py-14">
-      <div className="mb-8 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="mx-auto max-w-[1480px] px-4 py-7 md:px-7 md:py-9">
+      <div className="mb-6 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <p className="text-[15px] font-semibold text-[var(--blue)]">Step 3 · CRM</p>
-          <h1 className="mt-3 text-[42px] font-semibold leading-[1.03] tracking-[-0.055em] md:text-[58px]">
+          <h1 className="mt-3 text-[38px] font-semibold leading-[1.03] tracking-[-0.05em] md:text-[48px]">
             The lead exists. The journey is still broken.
           </h1>
         </div>
-        <p className="max-w-[500px] text-[17px] leading-7 text-[var(--copy)]">
+        <p className="max-w-[540px] text-[18px] leading-7 text-[var(--copy)]">
           This is the subtle failure: FlowCRM accepted the record successfully, but the routing rule did not produce an owner.
         </p>
       </div>
 
-      <section className="crm-shell min-h-[720px] overflow-hidden rounded-[26px] border border-[#dfe3e8] bg-[#f7f8fa]">
-        <div className="flex min-h-[720px]">
+      <section className="crm-shell min-h-[520px] h-[calc(100dvh-250px)] overflow-hidden rounded-[26px] border border-[#dfe3e8] bg-[#f7f8fa]">
+        <div className="flex h-full min-h-[520px]">
           <aside className="hidden w-[238px] shrink-0 border-r border-[#e1e5ea] bg-[#171a21] p-4 text-white lg:flex lg:flex-col">
             <div className="flex items-center gap-3 px-2 py-3">
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#5865ff] text-white">
@@ -90,7 +90,7 @@ export function CrmLeadView() {
 
             <div className="mt-auto rounded-2xl border border-white/10 bg-white/[.04] p-4">
               <p className="text-[14px] font-semibold text-white">Birmingham workspace</p>
-              <p className="mt-1 text-[13px] leading-5 text-white/45">BrightHome Cleaning</p>
+              <p className="mt-1 text-[14px] leading-6 text-white/55">BrightHome Cleaning</p>
             </div>
           </aside>
 
@@ -98,10 +98,10 @@ export function CrmLeadView() {
             <header className="flex h-[68px] items-center justify-between border-b border-[#e1e5ea] bg-white px-5 md:px-7">
               <div className="flex min-w-0 items-center gap-3">
                 <Search size={18} className="text-[#9ba2ad]" />
-                <span className="hidden text-[14px] text-[#9ba2ad] sm:inline">Search leads, contacts, tasks…</span>
+                <span className="hidden text-[15px] text-[#818995] sm:inline">Search leads, contacts, tasks…</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="hidden rounded-full bg-[#edf8f1] px-3 py-1.5 text-[13px] font-semibold text-[#25734b] sm:inline-flex">
+                <span className="hidden rounded-full bg-[#edf8f1] px-3 py-1.5 text-[14px] font-semibold text-[#25734b] sm:inline-flex">
                   CRM healthy
                 </span>
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#edf0f4] text-[#58606b]">
@@ -113,12 +113,12 @@ export function CrmLeadView() {
             <div className="p-5 md:p-7">
               <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-[14px] font-medium text-[#818995]">Leads / Residential enquiry</p>
+                  <p className="text-[15px] font-medium text-[#707986]">Leads / Residential enquiry</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <h2 className="text-[30px] font-semibold tracking-[-0.045em] text-[#171a21]">Amina Test</h2>
-                    <span className="rounded-full bg-[#eef0ff] px-3 py-1.5 text-[13px] font-semibold text-[#4350d9]">Qualified</span>
+                    <span className="rounded-full bg-[#eef0ff] px-3 py-1.5 text-[14px] font-semibold text-[#4350d9]">Qualified</span>
                   </div>
-                  <p className="mt-2 font-mono text-[13px] text-[#8b929d]">crm_demo_1842</p>
+                  <p className="mt-2 font-mono text-[14px] text-[#717a86]">crm_demo_1842</p>
                 </div>
                 <button className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dce1e6] bg-white px-3.5 text-[14px] font-semibold text-[#525a65]">
                   Actions
@@ -130,7 +130,7 @@ export function CrmLeadView() {
                 <section className="rounded-[22px] border border-[#e0e4e9] bg-white p-5 md:p-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-[17px] font-semibold text-[#171a21]">Lead details</h3>
-                    <span className="inline-flex items-center gap-2 text-[13px] font-medium text-[#6f7782]">
+                    <span className="inline-flex items-center gap-2 text-[14px] font-medium text-[#626b76]">
                       <Check size={14} className="text-[#2e8d5d]" />
                       Synced just now
                     </span>
@@ -146,8 +146,8 @@ export function CrmLeadView() {
                       ["Qualification", "96% confidence"],
                     ].map(([label, value]) => (
                       <div key={label}>
-                        <p className="text-[14px] font-medium text-[#89909a]">{label}</p>
-                        <p className="mt-1.5 text-[15px] font-semibold text-[#2c3139]">{value}</p>
+                        <p className="text-[15px] font-medium text-[#737c87]">{label}</p>
+                        <p className="mt-1.5 text-[16px] font-semibold text-[#2c3139]">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -162,7 +162,7 @@ export function CrmLeadView() {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <p className="text-[14px] font-medium text-[#7a828e]">Lead owner</p>
+                        <p className="text-[15px] font-medium text-[#6f7883]">Lead owner</p>
                         <div className="mt-2 flex items-center gap-2">
                           {resolving ? (
                             <>
@@ -178,7 +178,7 @@ export function CrmLeadView() {
                         </div>
                       </div>
                       {!resolving ? (
-                        <div className="rounded-xl bg-white px-4 py-3 font-mono text-[13px] leading-6 text-[#6f7782]">
+                        <div className="rounded-xl bg-white px-4 py-3 font-mono text-[14px] leading-6 text-[#5d6672]">
                           expected: <span className="text-[#2f3944]">saim.birmingham</span><br />
                           received: <span className="font-semibold text-[#b73d52]">null</span>
                         </div>
@@ -207,12 +207,12 @@ export function CrmLeadView() {
                           {index < 3 ? <span className="absolute bottom-[-24px] top-4 w-px bg-[#e3e6ea]" /> : null}
                         </div>
                         <div>
-                          <p className="font-mono text-[13px] text-[#9aa1aa]">{time}</p>
+                          <p className="font-mono text-[14px] text-[#7f8791]">{time}</p>
                           <p className="mt-1 text-[15px] font-semibold text-[#343a43]">{title}</p>
                           <p className={
                             index === 3 && !resolving
-                              ? "mt-1 text-[14px] font-medium text-[var(--rose)]"
-                              : "mt-1 text-[14px] text-[#818995]"
+                              ? "mt-1 text-[15px] font-semibold text-[var(--rose)]"
+                              : "mt-1 text-[15px] text-[#707986]"
                           }>{detail}</p>
                         </div>
                       </div>
