@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box, Check, ChevronRight } from "lucide-react";
+import { Box, Check, ChevronRight, Shapes } from "lucide-react";
 
 const steps = [
   { href: "/", label: "Customer site" },
@@ -23,8 +23,15 @@ function stepIndex(pathname: string) {
 export function DemoStepbar() {
   const pathname = usePathname();
   const architectureActive = pathname.startsWith("/architecture");
-  const useCasesPage = pathname.startsWith("/use-cases");
-  const current = architectureActive || useCasesPage ? -1 : stepIndex(pathname);
+  const useCasesActive = pathname.startsWith("/use-cases");
+  const current = architectureActive || useCasesActive ? -1 : stepIndex(pathname);
+
+  const utilityBase =
+    "hidden h-9 shrink-0 items-center gap-2 rounded-lg px-3.5 text-[13px] font-semibold transition md:inline-flex";
+  const utilityActive =
+    "bg-[#5665ff] text-white shadow-[0_5px_16px_rgba(86,101,255,.28)]";
+  const utilityIdle =
+    "border border-white/15 text-white/72 hover:border-white/30 hover:bg-white/10 hover:text-white";
 
   return (
     <div className="sticky top-0 z-50 border-b border-white/10 bg-[#111318] text-white shadow-[0_8px_28px_rgba(17,19,24,.12)]">
@@ -40,6 +47,7 @@ export function DemoStepbar() {
             {steps.map((step, index) => {
               const active = index === current;
               const completed = current >= 0 && index < current;
+
               return (
                 <div key={step.href} className="flex items-center">
                   <Link
@@ -60,26 +68,33 @@ export function DemoStepbar() {
                     )}
                     {step.label}
                   </Link>
-                  {index < steps.length - 1 ? <ChevronRight size={14} className="mx-0.5 text-white/20" /> : null}
+                  {index < steps.length - 1 ? (
+                    <ChevronRight size={14} className="mx-0.5 text-white/20" />
+                  ) : null}
                 </div>
               );
             })}
           </div>
         </nav>
 
-        {!useCasesPage ? (
+        <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/architecture"
-            className={
-              architectureActive
-                ? "hidden h-9 shrink-0 items-center gap-2 rounded-lg bg-white px-3.5 text-[13px] font-semibold text-[#111318] md:inline-flex"
-                : "hidden h-9 shrink-0 items-center gap-2 rounded-lg border border-white/15 px-3.5 text-[13px] font-semibold text-white/72 transition hover:border-white/30 hover:bg-white/10 hover:text-white md:inline-flex"
-            }
+            aria-current={architectureActive ? "page" : undefined}
+            className={`${utilityBase} ${architectureActive ? utilityActive : utilityIdle}`}
           >
             <Box size={14} />
-            System anatomy
+            3D
           </Link>
-        ) : null}
+          <Link
+            href="/use-cases"
+            aria-current={useCasesActive ? "page" : undefined}
+            className={`${utilityBase} ${useCasesActive ? utilityActive : utilityIdle}`}
+          >
+            <Shapes size={14} />
+            Use cases
+          </Link>
+        </div>
       </div>
     </div>
   );
