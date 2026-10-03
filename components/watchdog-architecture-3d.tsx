@@ -475,7 +475,9 @@ export function WatchdogArchitecture3D() {
       .add(state.signal, { x: 6.0, y: -3.65, z: 0.2, scale: 0.65 }, 3100)
       .play();
 
-    return () => timeline.cancel();
+    return () => {
+      timeline.cancel();
+    };
   }, [traceNonce]);
 
   return (
