@@ -1,13 +1,27 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { ArrowDownRight, ArrowRight, CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { animate } from "animejs";
 
 export function BrightHomeEnquiry() {
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ctaRef.current) return;
+    const animation = animate(ctaRef.current, {
+      translateY: [0, -5, 0],
+      opacity: [0.72, 1, 0.72],
+      duration: 1900,
+      loop: true,
+      ease: "inOut(3)",
+    });
+    return () => { animation.cancel(); };
+  }, []);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,13 +96,20 @@ export function BrightHomeEnquiry() {
         Your preferred date is a request until a BrightHome team member confirms it.
       </div>
 
+      {!sending && !sent ? (
+        <div ref={ctaRef} className="mt-5 flex items-center justify-center gap-2 text-[14px] font-semibold text-[#516058]">
+          <ArrowDownRight size={16} className="text-[#267342]" />
+          Start the demo here
+        </div>
+      ) : null}
+
       <button
         type="submit"
         disabled={sending || sent}
         className={
           sent
-            ? "mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#267342] px-4 text-[15px] font-semibold text-white"
-            : "mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#162019] px-4 text-[15px] font-semibold text-white transition hover:bg-[#27332b] disabled:cursor-wait disabled:opacity-70"
+            ? "mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#267342] px-4 text-[15px] font-semibold text-white"
+            : "mt-3 inline-flex h-12 w-full ring-4 ring-[#dfeade]/80 items-center justify-center gap-2 rounded-xl bg-[#162019] px-4 text-[15px] font-semibold text-white transition hover:bg-[#27332b] disabled:cursor-wait disabled:opacity-70"
         }
       >
         {sending ? (
