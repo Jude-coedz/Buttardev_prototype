@@ -22,7 +22,8 @@ function stepIndex(pathname: string) {
 
 export function DemoStepbar() {
   const pathname = usePathname();
-  const current = stepIndex(pathname);
+  const architectureActive = pathname.startsWith("/architecture");
+  const current = architectureActive ? -1 : stepIndex(pathname);
 
   return (
     <div className="sticky top-0 z-50 border-b border-black/10 bg-[#111318] text-white">
@@ -58,7 +59,9 @@ export function DemoStepbar() {
 
         <Link
           href="/architecture"
-          className="hidden shrink-0 items-center gap-2 rounded-lg border border-white/15 px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:border-white/30 hover:bg-white/10 hover:text-white sm:inline-flex"
+          className={architectureActive
+            ? "hidden shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#111318] sm:inline-flex"
+            : "hidden shrink-0 items-center gap-2 rounded-lg border border-white/15 px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:border-white/30 hover:bg-white/10 hover:text-white sm:inline-flex"}
         >
           <Box size={14} />
           3D architecture
