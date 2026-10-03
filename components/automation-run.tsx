@@ -214,7 +214,7 @@ export function AutomationRun() {
                             : step.detail}
                       </p>
 
-                      <span className="absolute right-4 top-4 inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[#dfe3e8] bg-[#f7f8fa] px-2 font-mono text-[12px] font-semibold text-[#7b8490]">
+                      <span className="absolute -top-3 left-4 z-20 inline-flex h-7 min-w-8 items-center justify-center rounded-full border border-[#d9dde3] bg-white px-2 font-mono text-[12px] font-semibold text-[#69727e] shadow-[0_4px_12px_rgba(17,19,24,.08)]">
                         {String(index + 1).padStart(2, "0")}
                       </span>
                     </div>
