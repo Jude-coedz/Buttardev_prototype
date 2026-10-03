@@ -9,89 +9,100 @@ import {
   CSS2DObject,
   CSS2DRenderer,
 } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { animate, createTimeline, utils } from "animejs";
+import { animate } from "animejs";
 import "animejs/adapters/three";
 import {
   ArrowLeft,
   ArrowRight,
   Bot,
   Braces,
-  CircleDot,
   DatabaseZap,
+  Eye,
   GitBranch,
-  Layers3,
   LockKeyhole,
   MousePointer2,
-  Play,
   RotateCcw,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
-const modules = [
+const stages = [
+  {
+    id: "assembled",
+    index: "00",
+    title: "Assembled Watchdog",
+    short: "A conceptual view of the complete control plane",
+    explanation:
+      "Watchdog is not one physical box. This model groups the services that work together around an automation: synthetic testing, business assertions, observation, guarding, and evidence.",
+    location: "Runs beside the automation, with small inline gates only where a risky side effect needs protection.",
+    input: "Journey events and business contracts",
+    output: "Verified outcome or an isolated incident",
+    icon: ShieldCheck,
+  },
   {
     id: "probe",
+    index: "01",
     title: "Synthetic probe",
-    short: "Enters the real customer path safely",
-    color: "#5d74ff",
-    receives: "A schedule, deployment event, or operator-triggered check",
-    produces: "A synthetic customer event with a stable replay key",
-    boundary: "Never needs a real customer's identity",
+    short: "Safely enters the same path as a real customer",
     explanation:
-      "The probe is the input port. It injects a safe test event into the same route a real customer would use, giving Watchdog something realistic to observe without borrowing production PII.",
+      "The probe lives outside the client workflow. It creates a synthetic enquiry and sends it through the same public entry point a real customer would use.",
+    location: "Outside the automation → calls the same form, webhook, API, or trigger.",
+    input: "Schedule, deploy event, or manual test",
+    output: "Synthetic event + stable replay key",
     icon: Bot,
   },
   {
     id: "contract",
+    index: "02",
     title: "Contract engine",
-    short: "Turns business promises into assertions",
-    color: "#9b72f2",
-    receives: "The business conditions that must remain true",
-    produces: "Executable assertions for each handoff",
-    boundary: "Cannot invent policy that the client did not define",
+    short: "Defines what must remain true",
     explanation:
-      "This is the decision chip in the core. It knows the journey promises: one CRM record, one valid owner, truthful acknowledgements, approval thresholds, or any other condition the client depends on.",
+      "This service contains the business assertions. It is not checking whether an API key exists. It checks whether the outcome is valid: one owner, two approvals, no false confirmation, stock reserved before dispatch, and so on.",
+    location: "A separate Watchdog service evaluates normalized events against client-defined rules.",
+    input: "Observed state + business rule",
+    output: "Pass / fail assertion",
     icon: Braces,
   },
   {
     id: "observer",
+    index: "03",
     title: "Handoff observer",
-    short: "Sees the state crossing between tools",
-    color: "#28b0d0",
-    receives: "Outputs from the website, AI, CRM and routing adapters",
-    produces: "Expected-vs-actual evidence at the exact boundary",
-    boundary: "Reads the minimum fields required for the assertion",
+    short: "Reads state crossing between tools",
     explanation:
-      "The observer ring sits around the core. It watches integration boundaries, not vendor logos. This is how Watchdog catches a broken business outcome while every underlying platform still reports healthy.",
-    icon: GitBranch,
+      "The observer listens to the boundaries: webhook payloads, automation execution events, selected API responses, logs, or CRM state. It watches the data moving between systems without replacing those systems.",
+    location: "Beside integrations → reads the handoff leaving each tool.",
+    input: "Website, AI, CRM, routing, ERP, task-system events",
+    output: "Expected-vs-actual evidence",
+    icon: Eye,
   },
   {
     id: "guard",
-    title: "Guard shell",
-    short: "Stops invalid state from escaping",
-    color: "#df9e39",
-    receives: "Failed prerequisites and risk conditions",
-    produces: "A gate that blocks unsafe downstream actions",
-    boundary: "Does not replace the human business decision",
+    index: "04",
+    title: "Guard layer",
+    short: "Only this part may sit inline",
     explanation:
-      "The outer shell is the fail-closed layer. If an assertion fails, downstream side effects stay sealed inside the boundary instead of propagating bad state into Slack, payments, tasks, emails, or fulfilment.",
+      "For sensitive side effects, a tiny gate asks Watchdog whether the prerequisite passed. If not, the payment, message, task, email, or other action stays blocked. Most of Watchdog remains out-of-band.",
+    location: "Immediately before selected side effects, not wrapped around every API call.",
+    input: "Assertion result + intended side effect",
+    output: "Allow or hold",
     icon: LockKeyhole,
   },
   {
     id: "evidence",
-    title: "Evidence cartridge",
-    short: "Packages the incident and replay point",
-    color: "#31b879",
-    receives: "Failure evidence plus the corrected configuration",
-    produces: "A bounded replay and verified recovery",
-    boundary: "Reuses the same idempotency key instead of duplicating work",
+    index: "05",
+    title: "Evidence + replay store",
+    short: "Remembers what happened and where to resume",
     explanation:
-      "The evidence cartridge is the recovery module. It stores what failed, where it failed, what was protected, and the stable identifiers needed to restart from the failed boundary safely.",
+      "Watchdog does not rewrite production code. A human or deployment pipeline applies the fix. This module keeps the failed boundary, IDs, evidence, and idempotency key so Watchdog can verify a bounded replay afterward.",
+    location: "Separate operational store attached to the Watchdog service.",
+    input: "Failure evidence + corrected configuration",
+    output: "Replay point + verified recovery",
     icon: DatabaseZap,
   },
 ] as const;
 
-type ModuleId = (typeof modules)[number]["id"];
+type StageId = (typeof stages)[number]["id"];
+type PartId = Exclude<StageId, "assembled">;
 
 type SceneState = {
   scene: THREE.Scene;
@@ -99,286 +110,244 @@ type SceneState = {
   renderer: THREE.WebGLRenderer;
   labelRenderer: CSS2DRenderer;
   controls: OrbitControls;
-  core: THREE.Group;
-  signal: THREE.Mesh;
-  groups: Record<ModuleId, THREE.Group>;
-  labels: Record<ModuleId, HTMLElement>;
+  assembly: THREE.Group;
+  groups: Record<PartId, THREE.Group>;
+  meshes: Record<PartId, THREE.MeshStandardMaterial[]>;
+  labels: Record<PartId, HTMLElement>;
   clickable: THREE.Object3D[];
   frame: number;
   resizeObserver: ResizeObserver;
 };
 
-const assembled: Record<ModuleId, [number, number, number]> = {
-  probe: [-2.55, 0, 0],
-  contract: [0, 0, 0],
-  observer: [0, 0, 0.05],
+const assembledPositions: Record<PartId, [number, number, number]> = {
+  probe: [-2.25, 0, 0],
+  contract: [-0.65, 0, 0],
+  observer: [0, 0, 0],
   guard: [0, 0, 0],
-  evidence: [2.55, 0, 0],
+  evidence: [2.15, 0, 0],
 };
 
-const exploded: Record<ModuleId, [number, number, number]> = {
-  probe: [-4.9, 0.3, 0.2],
-  contract: [0, 3.45, 0.1],
-  observer: [0.15, 0.1, 3.65],
-  guard: [0, -3.65, -0.1],
-  evidence: [4.95, -0.15, 0.25],
+const explodedPositions: Record<PartId, [number, number, number]> = {
+  probe: [-5.5, 0, 0],
+  contract: [-2.45, 0, 0],
+  observer: [0, 0, 0],
+  guard: [2.7, 0, 0],
+  evidence: [5.55, 0, 0],
 };
 
-function moduleLabel(title: string, color: string) {
+function labelElement(index: string, title: string) {
   const element = document.createElement("div");
-  element.style.padding = "7px 10px";
-  element.style.borderRadius = "10px";
-  element.style.background = "rgba(6, 10, 16, .82)";
-  element.style.border = "1px solid rgba(255,255,255,.12)";
-  element.style.backdropFilter = "blur(12px)";
   element.style.fontFamily = "var(--font-inter), Inter, sans-serif";
-  element.style.fontSize = "13px";
-  element.style.fontWeight = "650";
-  element.style.color = "white";
-  element.style.whiteSpace = "nowrap";
   element.style.pointerEvents = "none";
-  element.style.transition = "opacity .25s ease";
-  element.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:99px;background:${color};margin-right:7px;box-shadow:0 0 12px ${color}"></span>${title}`;
+  element.style.userSelect = "none";
+  element.style.whiteSpace = "nowrap";
+  element.style.padding = "7px 10px";
+  element.style.borderRadius = "999px";
+  element.style.background = "rgba(255,255,255,.92)";
+  element.style.border = "1px solid rgba(17,19,24,.12)";
+  element.style.boxShadow = "0 8px 28px rgba(17,19,24,.09)";
+  element.style.color = "#1a1d22";
+  element.style.fontSize = "12px";
+  element.style.fontWeight = "650";
+  element.innerHTML = `<span style="color:#8a919b;margin-right:6px;font-family:ui-monospace,monospace">${index}</span>${title}`;
   return element;
 }
 
-function makeCore(scene: THREE.Scene) {
-  const core = new THREE.Group();
-  scene.add(core);
-
-  const chassis = new THREE.Mesh(
-    new RoundedBoxGeometry(4.8, 3.45, 3.15, 8, 0.28),
-    new THREE.MeshPhysicalMaterial({
-      color: "#111824",
-      roughness: 0.26,
-      metalness: 0.46,
-      transmission: 0.06,
-      transparent: true,
-      opacity: 0.94,
-      clearcoat: 0.65,
-      clearcoatRoughness: 0.22,
-    }),
-  );
-  chassis.castShadow = true;
-  chassis.receiveShadow = true;
-  core.add(chassis);
-
-  const innerGlow = new THREE.Mesh(
-    new RoundedBoxGeometry(4.28, 2.92, 2.65, 6, 0.22),
-    new THREE.MeshStandardMaterial({
-      color: "#172236",
-      emissive: "#3552a8",
-      emissiveIntensity: 0.12,
-      transparent: true,
-      opacity: 0.72,
-      roughness: 0.44,
-    }),
-  );
-  core.add(innerGlow);
-
-  const seamMaterial = new THREE.LineBasicMaterial({ color: "#40506a", transparent: true, opacity: 0.34 });
-  [-1.05, 1.05].forEach((x) => {
-    const geometry = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(x, -1.42, 1.59),
-      new THREE.Vector3(x, 1.42, 1.59),
-    ]);
-    core.add(new THREE.Line(geometry, seamMaterial));
+function material(color: string, emissive = color) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    emissive,
+    emissiveIntensity: 0.08,
+    metalness: 0.28,
+    roughness: 0.3,
+    transparent: true,
+    opacity: 1,
   });
-
-  return core;
 }
 
-function addProbe(core: THREE.Group, clickable: THREE.Object3D[]) {
-  const group = new THREE.Group();
-  group.userData.moduleId = "probe";
+function buildAssembly(scene: THREE.Scene) {
+  const assembly = new THREE.Group();
+  assembly.rotation.set(-0.08, -0.25, 0.04);
+  scene.add(assembly);
 
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.46, 0.46, 1.5, 40),
-    new THREE.MeshStandardMaterial({
-      color: "#21366d",
-      emissive: "#5d74ff",
-      emissiveIntensity: 0.32,
-      metalness: 0.45,
-      roughness: 0.24,
-    }),
-  );
-  body.rotation.z = Math.PI / 2;
-  body.userData.moduleId = "probe";
-  group.add(body);
-  clickable.push(body);
+  const clickable: THREE.Object3D[] = [];
+  const groups = {} as Record<PartId, THREE.Group>;
+  const meshes = {} as Record<PartId, THREE.MeshStandardMaterial[]>;
+  const labels = {} as Record<PartId, HTMLElement>;
 
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.34, 32, 32),
-    new THREE.MeshStandardMaterial({ color: "#8fa0ff", emissive: "#5d74ff", emissiveIntensity: 1.5 }),
-  );
-  cap.position.x = -0.78;
-  cap.userData.moduleId = "probe";
-  group.add(cap);
-  clickable.push(cap);
+  const register = (
+    id: PartId,
+    group: THREE.Group,
+    mats: THREE.MeshStandardMaterial[],
+    title: string,
+    index: string,
+  ) => {
+    group.position.set(...assembledPositions[id]);
+    group.userData.partId = id;
+    groups[id] = group;
+    meshes[id] = mats;
 
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.62, 0.055, 16, 48),
-    new THREE.MeshStandardMaterial({ color: "#8fa0ff", emissive: "#5d74ff", emissiveIntensity: 0.9 }),
-  );
-  ring.rotation.y = Math.PI / 2;
-  ring.position.x = 0.45;
-  group.add(ring);
+    const labelEl = labelElement(index, title);
+    const label = new CSS2DObject(labelEl);
+    label.position.set(0, 2.25, 0);
+    group.add(label);
+    labels[id] = labelEl;
 
-  core.add(group);
-  return group;
-}
+    assembly.add(group);
+  };
 
-function addContract(core: THREE.Group, clickable: THREE.Object3D[]) {
-  const group = new THREE.Group();
-  group.userData.moduleId = "contract";
+  // 01 Synthetic probe — input connector.
+  {
+    const group = new THREE.Group();
+    const mats: THREE.MeshStandardMaterial[] = [];
 
-  const chip = new THREE.Mesh(
-    new RoundedBoxGeometry(1.7, 1.15, 1.45, 6, 0.18),
-    new THREE.MeshStandardMaterial({
-      color: "#2e2148",
-      emissive: "#9b72f2",
-      emissiveIntensity: 0.45,
-      metalness: 0.38,
-      roughness: 0.25,
-    }),
-  );
-  chip.userData.moduleId = "contract";
-  group.add(chip);
-  clickable.push(chip);
+    const bodyMat = material("#dfe6ff", "#6579ff");
+    mats.push(bodyMat);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.8, 40), bodyMat);
+    body.rotation.z = Math.PI / 2;
+    body.userData.partId = "probe";
+    group.add(body);
+    clickable.push(body);
 
-  for (let i = -2; i <= 2; i += 1) {
-    const pin = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.12, 0.36),
-      new THREE.MeshStandardMaterial({ color: "#c9b8ff", emissive: "#9b72f2", emissiveIntensity: 0.45 }),
-    );
-    pin.position.set(i * 0.26, -0.64, 0);
-    group.add(pin);
+    const lensMat = material("#6d80ff");
+    lensMat.emissiveIntensity = 0.5;
+    mats.push(lensMat);
+    const lens = new THREE.Mesh(new THREE.SphereGeometry(0.38, 32, 32), lensMat);
+    lens.position.x = -1.0;
+    lens.userData.partId = "probe";
+    group.add(lens);
+    clickable.push(lens);
+
+    const collarMat = material("#aebaff");
+    mats.push(collarMat);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.07, 18, 64), collarMat);
+    collar.rotation.y = Math.PI / 2;
+    collar.position.x = 0.72;
+    group.add(collar);
+
+    register("probe", group, mats, "Synthetic probe", "01");
   }
 
-  const coreDot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 24, 24),
-    new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#b89cff", emissiveIntensity: 2.1 }),
-  );
-  coreDot.position.z = 0.78;
-  group.add(coreDot);
+  // 02 Contract engine — central logic chip.
+  {
+    const group = new THREE.Group();
+    const mats: THREE.MeshStandardMaterial[] = [];
 
-  core.add(group);
-  return group;
-}
+    const chipMat = material("#e8ddff", "#9d71ed");
+    mats.push(chipMat);
+    const chip = new THREE.Mesh(new RoundedBoxGeometry(1.9, 1.4, 1.7, 6, 0.18), chipMat);
+    chip.userData.partId = "contract";
+    group.add(chip);
+    clickable.push(chip);
 
-function addObserver(core: THREE.Group, clickable: THREE.Object3D[]) {
-  const group = new THREE.Group();
-  group.userData.moduleId = "observer";
+    const faceMat = material("#9d71ed");
+    faceMat.emissiveIntensity = 0.28;
+    mats.push(faceMat);
+    const face = new THREE.Mesh(new RoundedBoxGeometry(1.35, 0.85, 0.06, 4, 0.1), faceMat);
+    face.position.z = 0.88;
+    group.add(face);
 
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(2.72, 0.105, 24, 96),
-    new THREE.MeshStandardMaterial({
-      color: "#1e6d7e",
-      emissive: "#28b0d0",
-      emissiveIntensity: 0.68,
-      metalness: 0.32,
-      roughness: 0.24,
-    }),
-  );
-  ring.userData.moduleId = "observer";
-  group.add(ring);
-  clickable.push(ring);
+    [-0.55, -0.28, 0, 0.28, 0.55].forEach((x) => {
+      const pin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.28, 0.5), faceMat);
+      pin.position.set(x, -0.84, 0);
+      group.add(pin);
+    });
 
-  const ring2 = new THREE.Mesh(
-    new THREE.TorusGeometry(2.34, 0.035, 18, 96),
-    new THREE.MeshStandardMaterial({
-      color: "#6cdbed",
-      emissive: "#28b0d0",
-      emissiveIntensity: 0.8,
-      transparent: true,
-      opacity: 0.72,
-    }),
-  );
-  group.add(ring2);
+    register("contract", group, mats, "Contract engine", "02");
+  }
 
-  const sensor = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 28, 28),
-    new THREE.MeshStandardMaterial({ color: "#9bedf7", emissive: "#28b0d0", emissiveIntensity: 1.6 }),
-  );
-  sensor.position.set(0, 2.72, 0);
-  sensor.userData.moduleId = "observer";
-  group.add(sensor);
-  clickable.push(sensor);
+  // 03 Observer — sensing rings around the central body.
+  {
+    const group = new THREE.Group();
+    const mats: THREE.MeshStandardMaterial[] = [];
 
-  core.add(group);
-  return group;
-}
+    const ringMat = material("#d7f4fa", "#28b2cf");
+    ringMat.emissiveIntensity = 0.28;
+    mats.push(ringMat);
 
-function addGuard(core: THREE.Group, clickable: THREE.Object3D[]) {
-  const group = new THREE.Group();
-  group.userData.moduleId = "guard";
+    [2.1, 2.42].forEach((radius, index) => {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, index === 0 ? 0.12 : 0.055, 20, 96),
+        ringMat,
+      );
+      ring.userData.partId = "observer";
+      group.add(ring);
+      clickable.push(ring);
+    });
 
-  const shellGeo = new THREE.BoxGeometry(5.35, 4.0, 3.72);
-  const shell = new THREE.Mesh(
-    shellGeo,
-    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.025, color: "#df9e39" }),
-  );
-  shell.userData.moduleId = "guard";
-  group.add(shell);
-  clickable.push(shell);
+    const sensorMat = material("#57cce1");
+    sensorMat.emissiveIntensity = 0.55;
+    mats.push(sensorMat);
+    const sensor = new THREE.Mesh(new THREE.SphereGeometry(0.22, 28, 28), sensorMat);
+    sensor.position.set(0, 2.42, 0);
+    sensor.userData.partId = "observer";
+    group.add(sensor);
+    clickable.push(sensor);
 
-  const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(shellGeo),
-    new THREE.LineBasicMaterial({ color: "#df9e39", transparent: true, opacity: 0.5 }),
-  );
-  group.add(edges);
+    register("observer", group, mats, "Handoff observer", "03");
+  }
 
-  const corner = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 0.18, 0.18),
-    new THREE.MeshStandardMaterial({ color: "#ffd17f", emissive: "#df9e39", emissiveIntensity: 1.0 }),
-  );
-  corner.position.set(2.67, 2, 1.86);
-  group.add(corner);
+  // 04 Guard — split shell that slides apart like product casing.
+  {
+    const group = new THREE.Group();
+    const mats: THREE.MeshStandardMaterial[] = [];
+    const shellMat = material("#fff1cf", "#d79a34");
+    shellMat.opacity = 0.92;
+    mats.push(shellMat);
 
-  core.add(group);
-  return group;
-}
+    const left = new THREE.Mesh(new RoundedBoxGeometry(1.15, 3.6, 3.5, 8, 0.24), shellMat);
+    left.position.x = -0.72;
+    left.userData.partId = "guard";
+    group.add(left);
+    clickable.push(left);
 
-function addEvidence(core: THREE.Group, clickable: THREE.Object3D[]) {
-  const group = new THREE.Group();
-  group.userData.moduleId = "evidence";
+    const right = new THREE.Mesh(new RoundedBoxGeometry(1.15, 3.6, 3.5, 8, 0.24), shellMat);
+    right.position.x = 0.72;
+    right.userData.partId = "guard";
+    group.add(right);
+    clickable.push(right);
 
-  const cartridge = new THREE.Mesh(
-    new RoundedBoxGeometry(1.4, 2.0, 1.75, 6, 0.2),
-    new THREE.MeshStandardMaterial({
-      color: "#173e31",
-      emissive: "#31b879",
-      emissiveIntensity: 0.36,
-      metalness: 0.4,
-      roughness: 0.28,
-    }),
-  );
-  cartridge.userData.moduleId = "evidence";
-  group.add(cartridge);
-  clickable.push(cartridge);
+    const seamMat = material("#e5b45b");
+    mats.push(seamMat);
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.0, 3.0), seamMat);
+    group.add(seam);
 
-  [0.45, 0, -0.45].forEach((y) => {
-    const slot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 0.18, 1.2),
-      new THREE.MeshStandardMaterial({ color: "#72e4ae", emissive: "#31b879", emissiveIntensity: 0.6 }),
-    );
-    slot.position.set(0.72, y, 0);
-    group.add(slot);
-  });
+    register("guard", group, mats, "Guard layer", "04");
+  }
 
-  core.add(group);
-  return group;
+  // 05 Evidence — removable cartridge.
+  {
+    const group = new THREE.Group();
+    const mats: THREE.MeshStandardMaterial[] = [];
+
+    const cartMat = material("#daf6e8", "#31b978");
+    mats.push(cartMat);
+    const cart = new THREE.Mesh(new RoundedBoxGeometry(1.55, 2.25, 1.9, 6, 0.2), cartMat);
+    cart.userData.partId = "evidence";
+    group.add(cart);
+    clickable.push(cart);
+
+    const railMat = material("#57ca91");
+    railMat.emissiveIntensity = 0.22;
+    mats.push(railMat);
+    [-0.52, 0, 0.52].forEach((y) => {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.18, 1.25), railMat);
+      rail.position.set(0.8, y, 0);
+      group.add(rail);
+    });
+
+    register("evidence", group, mats, "Evidence + replay", "05");
+  }
+
+  return { assembly, groups, meshes, labels, clickable };
 }
 
 export function WatchdogArchitecture3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<SceneState | null>(null);
-  const [activeId, setActiveId] = useState<ModuleId>("contract");
-  const [explodeProgress, setExplodeProgress] = useState(0.72);
-  const [traceNonce, setTraceNonce] = useState(0);
-  const [tracing, setTracing] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
 
-  const active = useMemo(() => modules.find((item) => item.id === activeId) ?? modules[1], [activeId]);
+  const active = stages[stageIndex];
   const ActiveIcon = active.icon;
 
   useEffect(() => {
@@ -386,13 +355,13 @@ export function WatchdogArchitecture3D() {
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#080c12");
+    scene.background = new THREE.Color("#f3f4f6");
 
-    const camera = new THREE.PerspectiveCamera(41, 1, 0.1, 100);
-    camera.position.set(9.6, 6.2, 11.8);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    camera.position.set(9.5, 6.1, 12.4);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.65));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -407,101 +376,68 @@ export function WatchdogArchitecture3D() {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.07;
     controls.enablePan = false;
-    controls.minDistance = 8;
-    controls.maxDistance = 18;
+    controls.minDistance = 9;
+    controls.maxDistance = 19;
     controls.target.set(0, 0, 0);
 
-    scene.add(new THREE.AmbientLight("#b8c7e7", 1.2));
+    scene.add(new THREE.HemisphereLight("#ffffff", "#cfd3da", 2.2));
 
-    const key = new THREE.DirectionalLight("#ffffff", 3.5);
-    key.position.set(6, 8, 8);
+    const key = new THREE.DirectionalLight("#ffffff", 3.2);
+    key.position.set(4, 8, 7);
     key.castShadow = true;
     scene.add(key);
 
-    const blue = new THREE.PointLight("#5d74ff", 32, 24);
-    blue.position.set(-5, 2.5, 4);
-    scene.add(blue);
+    const fill = new THREE.DirectionalLight("#dce4ff", 1.6);
+    fill.position.set(-7, 3, 5);
+    scene.add(fill);
 
-    const green = new THREE.PointLight("#31b879", 26, 22);
-    green.position.set(5, -2.5, 4);
-    scene.add(green);
-
-    const purple = new THREE.PointLight("#9b72f2", 18, 18);
-    purple.position.set(0, 5, -2);
-    scene.add(purple);
-
-    const floor = new THREE.GridHelper(22, 22, "#233044", "#121a26");
-    floor.position.y = -4.3;
-    floor.material.transparent = true;
-    floor.material.opacity = 0.28;
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(8.8, 80),
+      new THREE.ShadowMaterial({ color: "#111318", opacity: 0.1 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2.55;
+    floor.receiveShadow = true;
     scene.add(floor);
 
-    const core = makeCore(scene);
-    core.rotation.set(-0.08, -0.16, 0.02);
-
-    const clickable: THREE.Object3D[] = [];
-    const groups = {
-      probe: addProbe(core, clickable),
-      contract: addContract(core, clickable),
-      observer: addObserver(core, clickable),
-      guard: addGuard(core, clickable),
-      evidence: addEvidence(core, clickable),
-    } as Record<ModuleId, THREE.Group>;
-
-    const labels = {} as Record<ModuleId, HTMLElement>;
-    modules.forEach((module) => {
-      const labelEl = moduleLabel(module.title, module.color);
-      const label = new CSS2DObject(labelEl);
-      label.position.set(0, 1.55, 0);
-      groups[module.id].add(label);
-      labels[module.id] = labelEl;
-    });
-
-    const signal = new THREE.Mesh(
-      new THREE.SphereGeometry(0.16, 32, 32),
-      new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#91a4ff", emissiveIntensity: 2.8 }),
-    );
-    signal.position.set(-7.2, 0, 0);
-    scene.add(signal);
-
-    const inputLine = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-7, 0, 0), new THREE.Vector3(-3.3, 0, 0)]),
-      new THREE.LineBasicMaterial({ color: "#5d74ff", transparent: true, opacity: 0.45 }),
-    );
-    scene.add(inputLine);
-
-    const outputLine = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(3.3, 0, 0), new THREE.Vector3(7, 0, 0)]),
-      new THREE.LineBasicMaterial({ color: "#31b879", transparent: true, opacity: 0.45 }),
-    );
-    scene.add(outputLine);
+    const built = buildAssembly(scene);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
-    const intersections = (event: PointerEvent) => {
+    const hitTest = (event: PointerEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      return raycaster.intersectObjects(clickable, false);
+      return raycaster.intersectObjects(built.clickable, false);
     };
 
     const onPointerMove = (event: PointerEvent) => {
-      renderer.domElement.style.cursor = intersections(event).length ? "pointer" : "grab";
+      renderer.domElement.style.cursor = hitTest(event).length ? "pointer" : "grab";
     };
 
     const onClick = (event: PointerEvent) => {
-      const hit = intersections(event)[0];
-      const id = hit?.object.userData.moduleId as ModuleId | undefined;
-      if (id) setActiveId(id);
+      const hit = hitTest(event)[0];
+      const id = hit?.object.userData.partId as PartId | undefined;
+      if (!id) return;
+      const next = stages.findIndex((item) => item.id === id);
+      if (next >= 0) setStageIndex(next);
     };
 
+    let wheelLock = false;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      setExplodeProgress((value) => Math.max(0, Math.min(1, value + event.deltaY * 0.0013)));
+      if (wheelLock || Math.abs(event.deltaY) < 8) return;
+      wheelLock = true;
+      setStageIndex((current) => {
+        if (event.deltaY > 0) return Math.min(stages.length - 1, current + 1);
+        return Math.max(0, current - 1);
+      });
+      window.setTimeout(() => {
+        wheelLock = false;
+      }, 360);
     };
 
     renderer.domElement.addEventListener("pointermove", onPointerMove);
@@ -512,8 +448,9 @@ export function WatchdogArchitecture3D() {
       const width = mount.clientWidth;
       const height = mount.clientHeight;
       if (!width || !height) return;
+
       camera.aspect = width / height;
-      camera.fov = width < 760 ? 49 : 41;
+      camera.fov = width < 760 ? 45 : 36;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
       labelRenderer.setSize(width, height);
@@ -538,11 +475,11 @@ export function WatchdogArchitecture3D() {
       renderer,
       labelRenderer,
       controls,
-      core,
-      signal,
-      groups,
-      labels,
-      clickable,
+      assembly: built.assembly,
+      groups: built.groups,
+      meshes: built.meshes,
+      labels: built.labels,
+      clickable: built.clickable,
       frame,
       resizeObserver,
     };
@@ -558,7 +495,7 @@ export function WatchdogArchitecture3D() {
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           object.geometry.dispose();
-          if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose());
+          if (Array.isArray(object.material)) object.material.forEach((m) => m.dispose());
           else object.material.dispose();
         }
       });
@@ -574,172 +511,171 @@ export function WatchdogArchitecture3D() {
     const state = sceneRef.current;
     if (!state) return;
 
-    modules.forEach((module) => {
-      const group = state.groups[module.id];
-      const start = assembled[module.id];
-      const end = exploded[module.id];
-      const selected = module.id === activeId;
+    const activePart = active.id === "assembled" ? null : (active.id as PartId);
+    const exploded = stageIndex > 0;
 
-      const x = start[0] + (end[0] - start[0]) * explodeProgress;
-      const y = start[1] + (end[1] - start[1]) * explodeProgress;
-      const z = start[2] + (end[2] - start[2]) * explodeProgress + (selected ? 0.55 : 0);
+    (Object.keys(state.groups) as PartId[]).forEach((id) => {
+      const group = state.groups[id];
+      const target = exploded ? explodedPositions[id] : assembledPositions[id];
+      const selected = activePart === id;
 
       animate(group, {
-        x,
-        y,
-        z,
-        scale: selected ? 1.08 : 1,
-        duration: 420,
+        x: target[0],
+        y: target[1] + (selected ? 0.18 : 0),
+        z: target[2] + (selected ? 0.7 : 0),
+        scale: selected ? 1.12 : 1,
+        duration: 720,
         ease: "out(4)",
       });
 
-      state.labels[module.id].style.opacity = explodeProgress > 0.28 || selected ? "1" : "0";
-    });
-  }, [activeId, explodeProgress]);
+      state.labels[id].style.opacity = exploded ? "1" : "0";
 
-  useEffect(() => {
+      state.meshes[id].forEach((m) => {
+        m.opacity = activePart && !selected ? 0.28 : 1;
+        m.emissiveIntensity = selected ? 0.38 : 0.08;
+      });
+    });
+
+    animate(state.assembly, {
+      rotateY: stageIndex === 0 ? -14 : -7,
+      duration: 760,
+      ease: "out(4)",
+    });
+  }, [active.id, stageIndex]);
+
+  const resetView = () => {
     const state = sceneRef.current;
-    if (!state || traceNonce === 0) return;
-
-    setTracing(true);
-    setExplodeProgress(0.55);
-
-    utils.set(state.signal, { x: -7.2, y: 0, z: 0, scale: 0.7 });
-
-    const timeline = createTimeline({
-      defaults: { duration: 720, ease: "inOut(3)" },
-      autoplay: false,
-      onComplete: () => setTracing(false),
-    });
-
-    timeline
-      .call(() => setActiveId("probe"), 0)
-      .add(state.signal, { x: -2.55, y: 0, z: 0, scale: 1.1 }, 0)
-      .call(() => setActiveId("contract"), 760)
-      .add(state.signal, { x: 0, y: 0, z: 0.1 }, 760)
-      .call(() => setActiveId("observer"), 1520)
-      .add(state.signal, { x: 0, y: 0.4, z: 2.0 }, 1520)
-      .call(() => setActiveId("guard"), 2280)
-      .add(state.signal, { x: 0, y: -1.7, z: 0 }, 2280)
-      .call(() => setActiveId("evidence"), 3040)
-      .add(state.signal, { x: 2.55, y: 0, z: 0.1 }, 3040)
-      .add(state.signal, { x: 7.2, y: 0, z: 0, scale: 0.72 }, 3800)
-      .play();
-
-    return () => {
-      timeline.cancel();
-    };
-  }, [traceNonce]);
+    if (!state) return;
+    state.camera.position.set(9.5, 6.1, 12.4);
+    state.controls.target.set(0, 0, 0);
+    state.controls.update();
+    setStageIndex(0);
+  };
 
   return (
-    <div className="min-h-[calc(100dvh-56px)] bg-[#080b10] text-white">
-      <div className="mx-auto max-w-[1540px] px-4 py-3 md:px-7">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <div className="min-h-[calc(100dvh-56px)] bg-[#f6f6f4] text-[#111318]">
+      <div className="mx-auto max-w-[1540px] px-4 py-4 md:px-7">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Link href="/recovery" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[.04] text-white/65 transition hover:bg-white/[.08] hover:text-white" aria-label="Back to recovery">
+            <Link
+              href="/recovery"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#dfe2e6] bg-white text-[#59616b] transition hover:bg-[#f0f1f2]"
+              aria-label="Back to recovery"
+            >
               <ArrowLeft size={17} />
             </Link>
             <div>
-              <p className="text-[14px] font-semibold text-[#91a1ff]">Live 3D teardown</p>
-              <h1 className="mt-0.5 text-[29px] font-semibold tracking-[-0.045em] md:text-[36px]">Take the Watchdog core apart.</h1>
+              <p className="text-[14px] font-semibold text-[#6670e8]">Exploded product view</p>
+              <h1 className="mt-0.5 text-[30px] font-semibold tracking-[-0.05em] md:text-[38px]">
+                Deconstruct Watchdog, one module at a time.
+              </h1>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setExplodeProgress((value) => value > 0.4 ? 0 : 1)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-3.5 text-[14px] font-semibold text-white/72 transition hover:bg-white/[.08]"
-            >
-              <Layers3 size={15} />
-              {explodeProgress > 0.4 ? "Reassemble core" : "Explode core"}
-            </button>
-            <button
-              onClick={() => setTraceNonce((value) => value + 1)}
-              disabled={tracing}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[14px] font-semibold text-[#111318] transition hover:bg-[#eef0f3] disabled:opacity-60"
-            >
-              {tracing ? <RotateCcw size={15} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-              {tracing ? "Tracing event" : "Trace an event"}
-            </button>
-          </div>
+          <button
+            onClick={resetView}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dfe2e6] bg-white px-3.5 text-[14px] font-semibold text-[#555e69] transition hover:bg-[#f0f1f2]"
+          >
+            <RotateCcw size={15} />
+            Reset assembly
+          </button>
         </div>
 
-        <div className="grid h-[calc(100dvh-150px)] min-h-[500px] max-h-[760px] gap-4 xl:grid-cols-[1.35fr_.65fr]">
-          <section className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0b1018]">
+        <div className="grid h-[calc(100dvh-145px)] min-h-[520px] max-h-[790px] gap-4 xl:grid-cols-[1.3fr_.7fr]">
+          <section className="relative overflow-hidden rounded-[28px] border border-[#dedfe2] bg-[#f3f4f6] shadow-[0_28px_90px_rgba(17,19,24,.06)]">
             <div className="pointer-events-none absolute left-4 top-4 z-20 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[13px] font-medium text-white/52 backdrop-blur">
+              <span className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/85 px-3 py-2 text-[13px] font-medium text-[#626a75] shadow-sm backdrop-blur">
                 <MousePointer2 size={13} />
-                Drag to rotate · click a part
+                Drag to inspect
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[13px] font-medium text-white/52 backdrop-blur">
-                <Layers3 size={13} />
-                Scroll over the model to pull it apart
+              <span className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/85 px-3 py-2 text-[13px] font-medium text-[#626a75] shadow-sm backdrop-blur">
+                <GitBranch size={13} />
+                Scroll here to deconstruct
               </span>
             </div>
 
             <div ref={mountRef} className="absolute inset-0" />
 
-            <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-20 flex items-end justify-between gap-4">
-              <div className="rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[13px] font-medium text-white/45 backdrop-blur">
-                <span className="mr-2 inline-block h-2 w-2 rounded-full bg-[#55d99b]" />
-                Three.js core · Anime.js object animation
-              </div>
-              <div className="hidden w-40 md:block">
-                <div className="mb-1.5 flex justify-between text-[11px] font-medium text-white/32">
-                  <span>assembled</span><span>exploded</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-[#7180ff] transition-[width] duration-200" style={{ width: `${explodeProgress * 100}%` }} />
+            <div className="absolute bottom-4 left-4 right-4 z-20">
+              <div className="rounded-[18px] border border-black/8 bg-white/90 p-3 shadow-[0_10px_32px_rgba(17,19,24,.08)] backdrop-blur">
+                <div className="flex gap-2 overflow-x-auto [scrollbar-width:none]">
+                  {stages.map((stage, index) => (
+                    <button
+                      key={stage.id}
+                      onClick={() => setStageIndex(index)}
+                      className={
+                        index === stageIndex
+                          ? "inline-flex h-9 shrink-0 items-center gap-2 rounded-xl bg-[#111318] px-3 text-[13px] font-semibold text-white"
+                          : "inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-3 text-[13px] font-semibold text-[#747c86] transition hover:bg-[#f0f1f2] hover:text-[#23272d]"
+                      }
+                    >
+                      <span className="font-mono text-[11px] opacity-60">{stage.index}</span>
+                      {stage.id === "assembled" ? "Assembled" : stage.title}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
           </section>
 
-          <aside className="flex min-h-0 flex-col overflow-y-auto rounded-[26px] border border-white/10 bg-[#10151e] p-5 md:p-6">
+          <aside className="flex min-h-0 flex-col overflow-y-auto rounded-[28px] border border-[#dedfe2] bg-white p-5 shadow-[0_18px_50px_rgba(17,19,24,.045)] md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[14px] font-semibold text-white/38">Selected physical module</p>
-                <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.045em]">{active.title}</h2>
-                <p className="mt-1 text-[15px] text-white/46">{active.short}</p>
+                <p className="text-[13px] font-semibold uppercase tracking-[.08em] text-[#9097a1]">
+                  {active.index === "00" ? "Start here" : `Module ${active.index} of 05`}
+                </p>
+                <h2 className="mt-2 text-[29px] font-semibold tracking-[-0.045em] text-[#111318]">{active.title}</h2>
+                <p className="mt-1 text-[15px] font-medium text-[#747c86]">{active.short}</p>
               </div>
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${active.color}22`, color: active.color }}>
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f0f1f4] text-[#5e6874]">
                 <ActiveIcon size={20} />
               </span>
             </div>
 
-            <p className="mt-5 text-[16px] leading-7 text-white/64">{active.explanation}</p>
+            <p className="mt-5 text-[16px] leading-7 text-[#535b66]">{active.explanation}</p>
 
-            <div className="mt-5 space-y-2.5">
-              <div className="rounded-[16px] border border-white/10 bg-white/[.035] p-4">
-                <p className="text-[13px] font-medium text-white/34">Receives</p>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/80">{active.receives}</p>
+            <div className="mt-5 rounded-[18px] bg-[#f6f7f8] p-4">
+              <p className="text-[13px] font-semibold text-[#8a929c]">Where it actually sits</p>
+              <p className="mt-2 text-[15px] font-semibold leading-6 text-[#2f353c]">{active.location}</p>
+            </div>
+
+            <div className="mt-3 grid gap-3">
+              <div className="rounded-[18px] border border-[#e3e5e8] p-4">
+                <p className="text-[13px] font-medium text-[#949ba4]">Receives</p>
+                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#343a42]">{active.input}</p>
               </div>
-              <div className="rounded-[16px] border border-white/10 bg-white/[.035] p-4">
-                <p className="text-[13px] font-medium text-white/34">Produces</p>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/80">{active.produces}</p>
-              </div>
-              <div className="rounded-[16px] border border-[#55d99b]/18 bg-[#55d99b]/[.05] p-4">
-                <div className="flex items-center gap-2 text-[#70e5ae]">
-                  <ShieldCheck size={14} />
-                  <p className="text-[13px] font-semibold">Safety boundary</p>
-                </div>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/75">{active.boundary}</p>
+              <div className="rounded-[18px] border border-[#e3e5e8] p-4">
+                <p className="text-[13px] font-medium text-[#949ba4]">Produces</p>
+                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-[#343a42]">{active.output}</p>
               </div>
             </div>
 
-            <div className="mt-auto pt-5">
-              <div className="rounded-[18px] border border-[#8c99ff]/22 bg-[#5865ff]/[.07] p-4">
-                <div className="flex items-center gap-2 text-[#9fa9ff]">
+            {stageIndex < stages.length - 1 ? (
+              <button
+                onClick={() => setStageIndex((value) => Math.min(stages.length - 1, value + 1))}
+                className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#111318] px-4 text-[14px] font-semibold text-white transition hover:bg-[#292d33]"
+              >
+                {stageIndex === 0 ? "Start the breakdown" : "Next module"}
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <div className="mt-auto rounded-[18px] border border-[#d9dcff] bg-[#f2f3ff] p-4">
+                <div className="flex items-center gap-2 text-[#5865d8]">
                   <Sparkles size={15} />
-                  <p className="text-[14px] font-semibold">After the teardown</p>
+                  <p className="text-[14px] font-semibold">Now apply the pattern elsewhere</p>
                 </div>
-                <p className="mt-2 text-[14px] leading-6 text-white/52">See the same architecture wrapped around invoice approvals, onboarding, fulfilment and other mimicked automations.</p>
-                <Link href="/use-cases" className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-white">
-                  Open use cases
+                <p className="mt-2 text-[14px] leading-6 text-[#646b96]">
+                  See the same control-plane pattern around finance, onboarding, fulfilment, and other mimicked automations.
+                </p>
+                <Link
+                  href="/use-cases"
+                  className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-[#313a9f]"
+                >
+                  Open Watchdog use cases
                   <ArrowRight size={15} />
                 </Link>
               </div>
-            </div>
+            )}
           </aside>
         </div>
       </div>
