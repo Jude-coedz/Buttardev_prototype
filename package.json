@@ -1,6 +1,6 @@
 {
   "name": "buttardev-journey-watchdog",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,22 +10,26 @@
     "test:visual": "playwright test"
   },
   "dependencies": {
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.1",
     "animejs": "4.5.0",
     "lucide-react": "^0.548.0",
     "motion": "^13.4.3",
     "next": "16.3.8",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "three": "0.186.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/node": "^24.7.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
+    "@types/three": "^0.186.0",
     "eslint": "^9.37.0",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "^4.1.14",
-    "typescript": "^5.9.3",
-    "@playwright/test": "^1.55.0"
+    "typescript": "^5.9.3"
   }
 }
