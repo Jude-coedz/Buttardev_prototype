@@ -97,3 +97,59 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Rebuilt Watchdog experience */
+.watch-stage {
+  position: relative;
+  opacity: .74;
+  transform: scale(.992);
+  transition:
+    opacity 420ms cubic-bezier(.16, 1, .3, 1),
+    transform 420ms cubic-bezier(.16, 1, .3, 1),
+    filter 420ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.watch-stage-active {
+  opacity: 1;
+  transform: scale(1);
+  filter: saturate(1.02);
+}
+
+.watch-stage:not(.watch-stage-active) {
+  filter: saturate(.82);
+}
+
+.probe-ring {
+  box-shadow:
+    inset 0 0 0 1px rgba(59, 130, 246, .12),
+    0 0 0 6px rgba(59, 130, 246, .035);
+}
+
+.watchdog-console {
+  isolation: isolate;
+}
+
+.spatial-layer {
+  will-change: transform, opacity;
+  transform-origin: 50% 50%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.model-pulse,
+.signal-dot {
+  will-change: transform, opacity;
+}
+
+@media (max-width: 767px) {
+  .watch-stage {
+    opacity: .9;
+    transform: none;
+    filter: none !important;
+  }
+
+  .watch-stage-active {
+    transform: none;
+  }
+}
