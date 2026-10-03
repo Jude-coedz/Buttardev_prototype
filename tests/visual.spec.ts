@@ -65,7 +65,7 @@ test("the architecture route is a stable GSAP product teardown with active navig
   await expect(page.getByRole("button", { name: "SYNTHETIC PROBE" })).toBeVisible();
 
   await page.getByRole("button", { name: "Peel next layer" }).click();
-  await expect(page.getByText("Synthetic probe")).toBeVisible();
+  await expect(page.getByText("Synthetic probe", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Peel next layer" }).click();
   await expect(page.getByText("Handoff observer")).toBeVisible();
