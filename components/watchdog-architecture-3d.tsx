@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import Link from "next/link";
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
-  Float,
-  Html,
-  Line,
-  PresentationControls,
-  RoundedBox,
-} from "@react-three/drei";
+  CSS2DObject,
+  CSS2DRenderer,
+} from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { animate, createTimeline, utils } from "animejs";
 import "animejs/adapters/three";
-import type { Group, Mesh } from "three";
 import {
   ArrowLeft,
   Bot,
@@ -25,7 +24,6 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "lucide-react";
-import Link from "next/link";
 
 const layers = [
   {
@@ -37,7 +35,7 @@ const layers = [
     produces: "A synthetic enquiry with a stable replay key",
     boundary: "No real customer identity",
     explanation:
-      "The probe enters the same customer-facing path as a real lead, but it carries an isolated test identity and a stable idempotency key.",
+      "The probe enters the same customer-facing path as a real lead, but carries an isolated test identity and a stable idempotency key.",
     icon: Bot,
   },
   {
@@ -57,7 +55,7 @@ const layers = [
     title: "Handoff observer",
     short: "Expected vs actual",
     color: "#24a9c8",
-    receives: "The state crossing website, AI, CRM and routing boundaries",
+    receives: "State crossing website, AI, CRM and routing boundaries",
     produces: "Evidence tied to the exact failing handoff",
     boundary: "Reads only the fields needed for the contract",
     explanation:
@@ -70,7 +68,7 @@ const layers = [
     short: "Fail closed",
     color: "#d39736",
     receives: "A failed prerequisite such as owner_id = null",
-    produces: "Blocked unsafe side effects",
+    produces: "Slack alerts and follow-up tasks are blocked",
     boundary: "Does not make the human business decision",
     explanation:
       "When required state is missing, the guard prevents Slack alerts and follow-up tasks from running with invalid data.",
@@ -92,271 +90,52 @@ const layers = [
 
 type LayerId = (typeof layers)[number]["id"];
 
-const layerY = [2.9, 1.45, 0, -1.45, -2.9];
+type SceneState = {
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  renderer: THREE.WebGLRenderer;
+  labelRenderer: CSS2DRenderer;
+  controls: OrbitControls;
+  root: THREE.Group;
+  signal: THREE.Mesh;
+  groups: Record<LayerId, THREE.Group>;
+  clickableMeshes: THREE.Mesh[];
+  frame: number;
+  resizeObserver: ResizeObserver;
+};
 
-function LayerPlate({
-  layer,
-  index,
-  active,
-  exploded,
-  onSelect,
-}: {
-  layer: (typeof layers)[number];
-  index: number;
-  active: boolean;
-  exploded: boolean;
-  onSelect: (id: LayerId) => void;
-}) {
-  const group = useRef<Group>(null);
-
-  useEffect(() => {
-    if (!group.current) return;
-
-    const spacing = exploded ? 1.45 : 0.72;
-    const targetY = (2 - index) * spacing;
-    const targetZ = active ? 1.05 : index * 0.14;
-
-    animate(group.current, {
-      y: targetY,
-      z: targetZ,
-      scale: active ? 1.06 : 1,
-      rotateY: active ? 4 : 0,
-      duration: 680,
-      ease: "out(4)",
-    });
-  }, [active, exploded, index]);
-
-  return (
-    <group
-      ref={group}
-      position={[0, layerY[index], index * 0.14]}
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect(layer.id);
-      }}
-      onPointerOver={() => {
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = "default";
-      }}
-    >
-      <RoundedBox args={[6.4, 0.28, 3.15]} radius={0.18} smoothness={5}>
-        <meshStandardMaterial
-          color={active ? layer.color : "#17202d"}
-          metalness={0.2}
-          roughness={0.34}
-          transparent
-          opacity={active ? 0.96 : 0.82}
-          emissive={layer.color}
-          emissiveIntensity={active ? 0.23 : 0.035}
-        />
-      </RoundedBox>
-
-      <RoundedBox
-        args={[5.75, 0.05, 2.52]}
-        radius={0.12}
-        smoothness={4}
-        position={[0, 0.18, 0]}
-      >
-        <meshStandardMaterial
-          color={layer.color}
-          transparent
-          opacity={active ? 0.16 : 0.055}
-        />
-      </RoundedBox>
-
-      <Html
-        center
-        transform
-        distanceFactor={7.8}
-        position={[0, 0.34, 0]}
-        style={{ pointerEvents: "none", userSelect: "none" }}
-      >
-        <div
-          style={{
-            width: 260,
-            textAlign: "center",
-            color: "white",
-            fontFamily: "var(--font-inter), Inter, sans-serif",
-          }}
-        >
-          <div style={{ fontSize: 18, fontWeight: 650, letterSpacing: "-0.03em" }}>
-            {layer.title}
-          </div>
-          <div style={{ marginTop: 5, fontSize: 13, color: "rgba(255,255,255,.55)" }}>
-            {layer.short}
-          </div>
-        </div>
-      </Html>
-
-      <mesh position={[-2.82, 0.28, 1.15]}>
-        <sphereGeometry args={[0.11, 24, 24]} />
-        <meshStandardMaterial color={layer.color} emissive={layer.color} emissiveIntensity={0.8} />
-      </mesh>
-    </group>
-  );
+function makeLabel(title: string, subtitle: string, color: string) {
+  const element = document.createElement("div");
+  element.style.width = "245px";
+  element.style.textAlign = "center";
+  element.style.fontFamily = "var(--font-inter), Inter, sans-serif";
+  element.style.pointerEvents = "none";
+  element.style.userSelect = "none";
+  element.innerHTML = `
+    <div style="font-size:18px;font-weight:650;letter-spacing:-.03em;color:white">${title}</div>
+    <div style="margin-top:5px;font-size:13px;color:rgba(255,255,255,.52)">${subtitle}</div>
+    <div style="width:34px;height:2px;border-radius:99px;background:${color};margin:10px auto 0;opacity:.85"></div>
+  `;
+  return element;
 }
 
-function ExternalNode({
-  position,
-  label,
-  sublabel,
-  color,
-}: {
-  position: [number, number, number];
-  label: string;
-  sublabel: string;
-  color: string;
-}) {
-  return (
-    <group position={position}>
-      <mesh>
-        <sphereGeometry args={[0.42, 32, 32]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.35}
-          roughness={0.38}
-        />
-      </mesh>
-      <Html
-        center
-        position={[0, -0.72, 0]}
-        style={{ pointerEvents: "none", userSelect: "none" }}
-      >
-        <div
-          style={{
-            width: 140,
-            textAlign: "center",
-            fontFamily: "var(--font-inter), Inter, sans-serif",
-          }}
-        >
-          <div style={{ color: "white", fontSize: 14, fontWeight: 650 }}>{label}</div>
-          <div style={{ marginTop: 2, color: "rgba(255,255,255,.42)", fontSize: 12 }}>{sublabel}</div>
-        </div>
-      </Html>
-    </group>
-  );
-}
-
-function WatchdogScene({
-  activeId,
-  setActiveId,
-  exploded,
-  traceNonce,
-  setTracing,
-}: {
-  activeId: LayerId;
-  setActiveId: (id: LayerId) => void;
-  exploded: boolean;
-  traceNonce: number;
-  setTracing: (value: boolean) => void;
-}) {
-  const signal = useRef<Mesh>(null);
-
-  useEffect(() => {
-    if (!signal.current || traceNonce === 0) return;
-
-    setTracing(true);
-    utils.set(signal.current, {
-      x: -6.2,
-      y: 3.75,
-      z: 0.2,
-      scale: 0.6,
-      opacity: 1,
-    });
-
-    const timeline = createTimeline({
-      defaults: {
-        duration: 620,
-        ease: "inOut(3)",
-      },
-      autoplay: false,
-      onComplete: () => setTracing(false),
-    });
-
-    timeline
-      .call(() => setActiveId("probe"), 0)
-      .add(signal.current, { x: -1.8, y: 3.0, scale: 1 }, 0)
-      .call(() => setActiveId("contract"), 620)
-      .add(signal.current, { x: 0, y: 1.45, z: 0.5 }, 620)
-      .call(() => setActiveId("observer"), 1240)
-      .add(signal.current, { y: 0, z: 0.8 }, 1240)
-      .call(() => setActiveId("guard"), 1860)
-      .add(signal.current, { y: -1.45, z: 1.0 }, 1860)
-      .call(() => setActiveId("evidence"), 2480)
-      .add(signal.current, { y: -2.9, z: 1.2 }, 2480)
-      .add(signal.current, { x: 6.0, y: -3.65, z: 0.2, scale: 0.65 }, 3100)
-      .play();
-
-    return () => timeline.cancel();
-  }, [traceNonce, setActiveId, setTracing]);
-
-  return (
-    <>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[6, 8, 8]} intensity={2.2} />
-      <pointLight position={[-6, 3, 3]} intensity={28} color="#5367ff" />
-      <pointLight position={[5, -4, 4]} intensity={24} color="#2eaa72" />
-
-      <PresentationControls
-        global
-        cursor
-        speed={1}
-        zoom={1}
-        snap={{ mass: 1, tension: 150, friction: 24 }}
-        rotation={[-0.16, -0.12, 0]}
-        polar={[-0.35, 0.45]}
-        azimuth={[-0.85, 0.85]}
-      >
-        <Float speed={0.85} rotationIntensity={0.04} floatIntensity={0.12}>
-          <group>
-            {layers.map((layer, index) => (
-              <LayerPlate
-                key={layer.id}
-                layer={layer}
-                index={index}
-                active={activeId === layer.id}
-                exploded={exploded}
-                onSelect={setActiveId}
-              />
-            ))}
-
-            <ExternalNode position={[-6.2, 3.75, 0.2]} label="Client workflow" sublabel="website · AI · CRM" color="#5d74ff" />
-            <ExternalNode position={[6.0, -3.65, 0.2]} label="Safe outcome" sublabel="alert · task · evidence" color="#2eaa72" />
-
-            <Line
-              points={[[-5.75, 3.65, 0.15], [-3.5, 3.15, 0.08]]}
-              color="#5267ff"
-              lineWidth={1.25}
-              transparent
-              opacity={0.45}
-            />
-            <Line
-              points={[[3.5, -3.15, 0.08], [5.55, -3.58, 0.15]]}
-              color="#2eaa72"
-              lineWidth={1.25}
-              transparent
-              opacity={0.45}
-            />
-
-            <mesh ref={signal} position={[-6.2, 3.75, 0.2]}>
-              <sphereGeometry args={[0.17, 32, 32]} />
-              <meshStandardMaterial
-                color="#ffffff"
-                emissive="#8da0ff"
-                emissiveIntensity={2.5}
-              />
-            </mesh>
-          </group>
-        </Float>
-      </PresentationControls>
-    </>
-  );
+function makeExternalLabel(title: string, subtitle: string) {
+  const element = document.createElement("div");
+  element.style.width = "150px";
+  element.style.textAlign = "center";
+  element.style.fontFamily = "var(--font-inter), Inter, sans-serif";
+  element.style.pointerEvents = "none";
+  element.style.userSelect = "none";
+  element.innerHTML = `
+    <div style="font-size:14px;font-weight:650;color:white">${title}</div>
+    <div style="margin-top:3px;font-size:12px;color:rgba(255,255,255,.42)">${subtitle}</div>
+  `;
+  return element;
 }
 
 export function WatchdogArchitecture3D() {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<SceneState | null>(null);
   const [activeId, setActiveId] = useState<LayerId>("observer");
   const [exploded, setExploded] = useState(true);
   const [traceNonce, setTraceNonce] = useState(0);
@@ -367,6 +146,337 @@ export function WatchdogArchitecture3D() {
     [activeId],
   );
   const ActiveIcon = active.icon;
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#0b1018");
+
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(9.2, 6.3, 12.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.domElement.style.position = "absolute";
+    labelRenderer.domElement.style.inset = "0";
+    labelRenderer.domElement.style.pointerEvents = "none";
+
+    mount.appendChild(renderer.domElement);
+    mount.appendChild(labelRenderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enablePan = false;
+    controls.minDistance = 9;
+    controls.maxDistance = 20;
+    controls.minPolarAngle = Math.PI * 0.24;
+    controls.maxPolarAngle = Math.PI * 0.72;
+    controls.target.set(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight("#c8d4ff", 1.3));
+
+    const key = new THREE.DirectionalLight("#ffffff", 3.2);
+    key.position.set(6, 9, 8);
+    scene.add(key);
+
+    const blue = new THREE.PointLight("#5367ff", 42, 30);
+    blue.position.set(-6, 3, 4);
+    scene.add(blue);
+
+    const green = new THREE.PointLight("#2eaa72", 34, 28);
+    green.position.set(6, -4, 4);
+    scene.add(green);
+
+    const root = new THREE.Group();
+    root.rotation.set(-0.14, -0.12, 0);
+    scene.add(root);
+
+    const groups = {} as Record<LayerId, THREE.Group>;
+    const clickableMeshes: THREE.Mesh[] = [];
+
+    layers.forEach((layer, index) => {
+      const group = new THREE.Group();
+      group.position.set(0, (2 - index) * 1.45, index * 0.14);
+      group.userData.layerId = layer.id;
+
+      const geometry = new RoundedBoxGeometry(6.4, 0.28, 3.15, 6, 0.16);
+      const material = new THREE.MeshStandardMaterial({
+        color: "#17202d",
+        roughness: 0.34,
+        metalness: 0.2,
+        transparent: true,
+        opacity: 0.88,
+        emissive: new THREE.Color(layer.color),
+        emissiveIntensity: layer.id === "observer" ? 0.18 : 0.035,
+      });
+
+      const plate = new THREE.Mesh(geometry, material);
+      plate.castShadow = true;
+      plate.receiveShadow = true;
+      plate.userData.layerId = layer.id;
+      group.add(plate);
+      clickableMeshes.push(plate);
+
+      const insetGeometry = new RoundedBoxGeometry(5.72, 0.055, 2.48, 5, 0.12);
+      const insetMaterial = new THREE.MeshStandardMaterial({
+        color: layer.color,
+        transparent: true,
+        opacity: layer.id === "observer" ? 0.18 : 0.06,
+        roughness: 0.42,
+      });
+      const inset = new THREE.Mesh(insetGeometry, insetMaterial);
+      inset.position.y = 0.19;
+      group.add(inset);
+
+      const marker = new THREE.Mesh(
+        new THREE.SphereGeometry(0.105, 24, 24),
+        new THREE.MeshStandardMaterial({
+          color: layer.color,
+          emissive: layer.color,
+          emissiveIntensity: 1.2,
+        }),
+      );
+      marker.position.set(-2.82, 0.28, 1.12);
+      group.add(marker);
+
+      const label = new CSS2DObject(makeLabel(layer.title, layer.short, layer.color));
+      label.position.set(0, 0.48, 0);
+      group.add(label);
+
+      root.add(group);
+      groups[layer.id] = group;
+    });
+
+    const makeExternalNode = (
+      position: [number, number, number],
+      color: string,
+      title: string,
+      subtitle: string,
+    ) => {
+      const group = new THREE.Group();
+      group.position.set(...position);
+
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.43, 32, 32),
+        new THREE.MeshStandardMaterial({
+          color,
+          emissive: color,
+          emissiveIntensity: 0.45,
+          roughness: 0.38,
+        }),
+      );
+      group.add(sphere);
+
+      const label = new CSS2DObject(makeExternalLabel(title, subtitle));
+      label.position.set(0, -0.78, 0);
+      group.add(label);
+
+      root.add(group);
+      return group;
+    };
+
+    makeExternalNode([-6.2, 3.75, 0.2], "#5d74ff", "Client workflow", "website · AI · CRM");
+    makeExternalNode([6.0, -3.65, 0.2], "#2eaa72", "Safe outcome", "alert · task · evidence");
+
+    const lineMaterialIn = new THREE.LineBasicMaterial({
+      color: "#5d74ff",
+      transparent: true,
+      opacity: 0.42,
+    });
+    const lineIn = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-5.78, 3.68, 0.18),
+        new THREE.Vector3(-3.45, 3.12, 0.08),
+      ]),
+      lineMaterialIn,
+    );
+    root.add(lineIn);
+
+    const lineMaterialOut = new THREE.LineBasicMaterial({
+      color: "#2eaa72",
+      transparent: true,
+      opacity: 0.42,
+    });
+    const lineOut = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(3.45, -3.12, 0.08),
+        new THREE.Vector3(5.56, -3.56, 0.18),
+      ]),
+      lineMaterialOut,
+    );
+    root.add(lineOut);
+
+    const signal = new THREE.Mesh(
+      new THREE.SphereGeometry(0.17, 32, 32),
+      new THREE.MeshStandardMaterial({
+        color: "#ffffff",
+        emissive: "#8da0ff",
+        emissiveIntensity: 2.6,
+      }),
+    );
+    signal.position.set(-6.2, 3.75, 0.2);
+    root.add(signal);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    const pointerFromEvent = (event: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      return raycaster.intersectObjects(clickableMeshes, false);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      renderer.domElement.style.cursor = pointerFromEvent(event).length ? "pointer" : "grab";
+    };
+
+    const onClick = (event: PointerEvent) => {
+      const hit = pointerFromEvent(event)[0];
+      const id = hit?.object.userData.layerId as LayerId | undefined;
+      if (id) setActiveId(id);
+    };
+
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("click", onClick);
+
+    const resize = () => {
+      const width = mount.clientWidth;
+      const height = mount.clientHeight;
+      if (!width || !height) return;
+
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+      labelRenderer.setSize(width, height);
+    };
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(mount);
+    resize();
+
+    let frame = 0;
+    const render = () => {
+      frame = window.requestAnimationFrame(render);
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    };
+    render();
+
+    sceneRef.current = {
+      scene,
+      camera,
+      renderer,
+      labelRenderer,
+      controls,
+      root,
+      signal,
+      groups,
+      clickableMeshes,
+      frame,
+      resizeObserver,
+    };
+
+    return () => {
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("click", onClick);
+      resizeObserver.disconnect();
+      window.cancelAnimationFrame(frame);
+      controls.dispose();
+
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.geometry.dispose();
+          if (Array.isArray(object.material)) {
+            object.material.forEach((material) => material.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+      });
+
+      renderer.dispose();
+      renderer.domElement.remove();
+      labelRenderer.domElement.remove();
+      sceneRef.current = null;
+      document.body.style.cursor = "default";
+    };
+  }, []);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (!state) return;
+
+    layers.forEach((layer, index) => {
+      const group = state.groups[layer.id];
+      const plate = group.children.find(
+        (child) => child instanceof THREE.Mesh,
+      ) as THREE.Mesh | undefined;
+      const material = plate?.material as THREE.MeshStandardMaterial | undefined;
+
+      const spacing = exploded ? 1.45 : 0.72;
+      const targetY = (2 - index) * spacing;
+      const selected = layer.id === activeId;
+
+      animate(group, {
+        y: targetY,
+        z: selected ? 1.05 : index * 0.14,
+        scale: selected ? 1.06 : 1,
+        rotateY: selected ? 4 : 0,
+        duration: 680,
+        ease: "out(4)",
+      });
+
+      if (material) {
+        material.emissiveIntensity = selected ? 0.22 : 0.035;
+        material.color.set(selected ? layer.color : "#17202d");
+      }
+    });
+  }, [activeId, exploded]);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (!state || traceNonce === 0) return;
+
+    setTracing(true);
+
+    utils.set(state.signal, {
+      x: -6.2,
+      y: 3.75,
+      z: 0.2,
+      scale: 0.6,
+    });
+
+    const timeline = createTimeline({
+      defaults: { duration: 620, ease: "inOut(3)" },
+      autoplay: false,
+      onComplete: () => setTracing(false),
+    });
+
+    timeline
+      .call(() => setActiveId("probe"), 0)
+      .add(state.signal, { x: -1.8, y: 3.0, scale: 1 }, 0)
+      .call(() => setActiveId("contract"), 620)
+      .add(state.signal, { x: 0, y: 1.45, z: 0.5 }, 620)
+      .call(() => setActiveId("observer"), 1240)
+      .add(state.signal, { y: 0, z: 0.8 }, 1240)
+      .call(() => setActiveId("guard"), 1860)
+      .add(state.signal, { y: -1.45, z: 1.0 }, 1860)
+      .call(() => setActiveId("evidence"), 2480)
+      .add(state.signal, { y: -2.9, z: 1.2 }, 2480)
+      .add(state.signal, { x: 6.0, y: -3.65, z: 0.2, scale: 0.65 }, 3100)
+      .play();
+
+    return () => timeline.cancel();
+  }, [traceNonce]);
 
   return (
     <div className="min-h-[calc(100vh-52px)] bg-[#080b10] text-white">
@@ -413,24 +523,11 @@ export function WatchdogArchitecture3D() {
               Drag to rotate · click any layer
             </div>
 
-            <Canvas
-              dpr={[1, 1.75]}
-              camera={{ position: [9.2, 6.3, 12.5], fov: 38 }}
-              gl={{ antialias: true, alpha: true }}
-            >
-              <color attach="background" args={["#0b1018"]} />
-              <WatchdogScene
-                activeId={activeId}
-                setActiveId={setActiveId}
-                exploded={exploded}
-                traceNonce={traceNonce}
-                setTracing={setTracing}
-              />
-            </Canvas>
+            <div ref={mountRef} className="absolute inset-0" />
 
             <div className="pointer-events-none absolute bottom-5 left-5 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-2 text-[13px] font-medium text-white/45 backdrop-blur">
               <CircleDot size={13} className="text-[#55d99b]" />
-              WebGL scene · Anime.js Three adapter
+              Three.js · Anime.js Three adapter
             </div>
           </section>
 
