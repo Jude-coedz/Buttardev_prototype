@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({
-  variable: "--font-geist",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Journey Watchdog — ButtarDev Prototype",
+  title: "Journey Watchdog · ButtarDev product concept",
   description:
-    "A business-journey assurance prototype for service-business automation.",
+    "An interactive product concept showing how ButtarDev could verify a client automation still delivers the intended business outcome after launch.",
 };
 
 export default function RootLayout({
@@ -23,9 +25,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geist.variable} ${geistMono.variable}`}>
-        {children}
-      </body>
+      <body className={`${inter.variable} ${mono.variable}`}>{children}</body>
     </html>
   );
 }

@@ -1,130 +1,143 @@
 # Journey Watchdog
 
-A product prototype built as a representative ButtarDev client-workflow exercise.
+A product concept built for **Mushahid Buttar / ButtarDev**.
 
-Journey Watchdog tests whether a customer journey still produces the business outcome it was designed for after the automation goes live.
+Journey Watchdog explores a post-launch QA layer for client automations. It verifies that the **business outcome** still works end to end, not merely that each individual tool is online.
 
-The core idea is deliberately different from uptime monitoring:
-
-- A website can return 200 and still lose the lead.
-- A CRM can be online and still create an unowned record.
-- A Slack webhook can work and still send the wrong context.
-- A chatbot can reply instantly and still make a promise the business cannot keep.
-
-Watchdog sends a safe synthetic enquiry through the same journey and checks the business assertions at every handoff.
-
-## Demo scenario
+## Demo story
 
 The fictional client is **BrightHome Cleaning**.
 
-The main journey is:
+The experience is deliberately split into separate pages so every stage has one job:
 
 ```text
-Website enquiry
-  -> AI qualification
-  -> CRM lead
-  -> Owner assignment
-  -> Team alert
-  -> Follow-up task
+BrightHome customer site
+        ↓
+ButtarDev automation
+        ↓
+FlowCRM record
+        ↓
+owner routing regression
+        ↓
+Journey Watchdog
+        ↓
+safe fix + bounded replay
+        ↓
+interactive 3D architecture
 ```
 
-The demo includes a deliberate routing regression. The CRM record is created successfully, but the owner mapping returns `null`.
+### 1. Customer site
 
-That creates the important distinction this prototype is trying to demonstrate:
+A synthetic customer submits a real-looking cleaning enquiry on the BrightHome website.
 
-> the tools are healthy, but the customer journey is not.
+The customer receives a truthful acknowledgement. Their preferred date remains a request until a team member confirms it.
 
-The incident view explains:
+### 2. Automation
 
-- what the customer would feel
-- the expected and actual values
-- the most likely source of the regression
-- which downstream actions were protected
-- how the workflow could be safely replayed without duplicating the lead
+The enquiry moves through:
+
+```text
+Website form
+  → AI qualification
+  → CRM lead creation
+  → Owner routing
+  → Team notification
+  → Follow-up task
+```
+
+The first three stages succeed. Owner routing silently fails.
+
+### 3. CRM
+
+FlowCRM remains technically healthy and the lead record exists.
+
+The failure is business state:
+
+```text
+expected: owner_id = saim.birmingham
+observed: owner_id = null
+```
+
+No infrastructure outage is required for the customer journey to be broken.
+
+### 4. Watchdog
+
+Watchdog checks the journey contract:
+
+> Every qualified Birmingham lead must have exactly one owner before a team alert or follow-up task can run.
+
+It isolates the failed handoff and prevents the two downstream actions from running with invalid state.
+
+### 5. Recovery
+
+The mapping is corrected and replay resumes from the failed routing boundary.
+
+The existing synthetic CRM record is reused through the same idempotency key, so recovery does not create a duplicate lead.
+
+### 6. 3D architecture
+
+The architecture page uses a real Three.js WebGL scene, not a CSS perspective mock.
+
+The model contains five selectable layers:
+
+1. Synthetic probe
+2. Journey contract
+3. Handoff observer
+4. Guard layer
+5. Evidence + replay
+
+The viewer can:
+
+- drag to rotate the model,
+- click individual layers,
+- explode or compress the stack,
+- and trace one event through the layers.
+
+Anime.js uses its official Three.js adapter to animate the Three objects directly.
 
 ## Product principles
 
-### Business assertions before technical status
-
-The monitoring model is based on promises a service business can understand:
-
-- acknowledge an enquiry quickly
-- never promise unconfirmed availability
-- capture the details the team needs
-- assign a qualified lead to exactly one owner
-- create the next follow-up action
-- escalate low-confidence conversations to a human
-
-### Safe synthetic data
-
-The demo uses isolated test identities. The product concept assumes stable idempotency keys so failed runs can be replayed safely.
-
-### Human-readable incidents
-
-An operator should not need to decode raw execution logs to understand why the incident matters.
-
-### Proactive support
-
-The weekly report is intentionally client-readable. The larger opportunity is turning post-launch support from “tell us when it breaks” into evidence that the journey is still working.
-
-## Interaction
-
-- **Run verification** animates the synthetic journey.
-- The degraded scenario reproduces the owner-assignment failure.
-- **Inspect** opens the incident evidence drawer.
-- **Preview after fix** switches to the repaired journey.
-- Navigation exposes journey contracts, run history and a client-facing weekly report.
-
-## Automation architecture
-
-The visible journey is backed by a server-side synthetic runner at:
-
-```text
-POST /api/watchdog/run
-```
-
-The runner models the same boundaries a real service-business automation would need:
-
-```text
-synthetic webhook
-  -> qualification adapter
-  -> idempotent CRM upsert
-  -> routing rule
-  -> guarded team notification
-  -> guarded follow-up task
-```
-
-The degraded fixture intentionally returns no owner from routing. That failure prevents the alert and follow-up adapters from running. A healthy replay keeps the same idempotency key, which demonstrates the recovery principle without duplicating the CRM record.
-
-This keeps the demo deterministic and safe while making the failure handling, guard conditions and replay semantics inspectable in code.
+- **Business assertions over uptime:** a 200 response does not prove the customer journey worked.
+- **Progressive disclosure:** each page answers one question instead of making one dashboard explain the entire system.
+- **Synthetic data:** the demo never requires a real customer's identity.
+- **Guarded side effects:** downstream actions wait until their prerequisites are valid.
+- **Replay from the failure boundary:** recovery does not blindly rerun completed work.
+- **Readable incidents:** operators see the customer impact and expected vs actual state, not raw execution logs.
 
 ## Stack
 
-- Next.js 16.3.8
-- React 19.3
+- Next.js 16
+- React 19
 - TypeScript
 - Tailwind CSS 4
+- Anime.js 4.5
+- Three.js
 - Motion
-- Anime.js
 - Lucide React
+- Playwright
 
-The incident drawer motion language is adapted from the open-source KokonutUI Smooth Drawer pattern (MIT), with the product UI and interaction model rebuilt for this prototype.
+## Verification
 
-## Why these motion libraries
+The repository CI runs:
 
-Motion handles stateful UI transitions, layout movement and the incident drawer.
+```bash
+npm install
+npm run build
+npx playwright install --with-deps chromium
+npm run test:visual
+```
 
-Anime.js is intentionally limited to the live verification sequence so animation communicates system activity rather than becoming decoration.
+The browser tests cover the complete multi-page product story and verify that the architecture page mounts a WebGL canvas.
 
-## Run locally
+## Local development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Open `http://localhost:3000`.
 
 ## Scope
 
-This is a front-end product prototype with deterministic demo data. It is designed to demonstrate product thinking, workflow architecture, failure handling and client-facing UX. It does not connect to real CRM, chatbot, email or automation accounts.
+This is a representative product prototype. It does not connect to a live CRM, client Slack workspace, real customer records, or production credentials.
