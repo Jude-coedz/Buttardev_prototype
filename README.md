@@ -1,123 +1,91 @@
 # Journey Watchdog
 
-A product prototype built as a representative ButtarDev client-workflow exercise.
+A product prototype built for a conversation with **Mushahid Buttar / ButtarDev**.
 
-Journey Watchdog tests whether a customer journey still produces the business outcome it was designed for after the automation goes live.
+Journey Watchdog explores a post-launch QA layer for client automations. The core premise is simple:
 
-The core idea is deliberately different from uptime monitoring:
+> a workflow is only healthy if the business outcome still happens end to end.
 
-- A website can return 200 and still lose the lead.
-- A CRM can be online and still create an unowned record.
-- A Slack webhook can work and still send the wrong context.
-- A chatbot can reply instantly and still make a promise the business cannot keep.
+A website can return 200, an AI assistant can answer, and a CRM can successfully create a record while the actual customer journey is still broken.
 
-Watchdog sends a safe synthetic enquiry through the same journey and checks the business assertions at every handoff.
-
-## Demo scenario
+## The demo
 
 The fictional client is **BrightHome Cleaning**.
 
-The main journey is:
+The prototype now shows the actual applications being watched instead of describing the concept through dashboard cards:
 
 ```text
-Website enquiry
-  -> AI qualification
-  -> CRM lead
-  -> Owner assignment
-  -> Team alert
-  -> Follow-up task
+BrightHome customer form
+  → AI qualification
+  → FlowCRM lead
+  → owner-routing rule
+  → team chat
+  → follow-up task
+          ↑
+     Journey Watchdog
 ```
 
-The demo includes a deliberate routing regression. The CRM record is created successfully, but the owner mapping returns `null`.
-
-That creates the important distinction this prototype is trying to demonstrate:
-
-> the tools are healthy, but the customer journey is not.
-
-The incident view explains:
-
-- what the customer would feel
-- the expected and actual values
-- the most likely source of the regression
-- which downstream actions were protected
-- how the workflow could be safely replayed without duplicating the lead
-
-## Product principles
-
-### Business assertions before technical status
-
-The monitoring model is based on promises a service business can understand:
-
-- acknowledge an enquiry quickly
-- never promise unconfirmed availability
-- capture the details the team needs
-- assign a qualified lead to exactly one owner
-- create the next follow-up action
-- escalate low-confidence conversations to a human
-
-### Safe synthetic data
-
-The demo uses isolated test identities. The product concept assumes stable idempotency keys so failed runs can be replayed safely.
-
-### Human-readable incidents
-
-An operator should not need to decode raw execution logs to understand why the incident matters.
-
-### Proactive support
-
-The weekly report is intentionally client-readable. The larger opportunity is turning post-launch support from “tell us when it breaks” into evidence that the journey is still working.
-
-## Interaction
-
-The rebuilt experience is intentionally self-explanatory for a first-time viewer:
-
-1. **Overview** explains the product in business language: Watchdog proves that the customer outcome still completes after an automation ships.
-2. **Run Watchdog** sends the synthetic BrightHome enquiry through the six-step journey and reveals the routing regression as it happens.
-3. **Incident evidence** explains the customer impact, expected vs actual state, protected downstream actions, the synthetic data boundary and idempotent recovery.
-4. **Under the hood** lets the viewer inspect the probe, journey contract, adapters, evaluator, guard rails and evidence/replay layers. Anime.js is used to trace the check through these layers and animate the explanatory tooltips.
-5. **Trust & controls** separates protections that are actually implemented in the prototype from production security controls that would still be required.
-6. **Client proof** shows how ongoing support can be translated into a client-readable assurance report instead of raw workflow logs.
-
-## Automation architecture
-
-The visible journey is backed by a server-side synthetic runner at:
+The deliberate regression is inside the owner-routing handoff. The CRM lead is created, but the routing rule returns:
 
 ```text
-POST /api/watchdog/run
+expected: owner_id = saim.birmingham
+actual:   owner_id = null
 ```
 
-The runner models the same boundaries a real service-business automation would need:
+Watchdog observes the journey contract, isolates the failure, and prevents the team notification and follow-up task from running with invalid state.
 
-```text
-synthetic webhook
-  -> qualification adapter
-  -> idempotent CRM upsert
-  -> routing rule
-  -> guarded team notification
-  -> guarded follow-up task
-```
+The viewer then fixes the mapping and safely replays from the failed boundary. The existing synthetic CRM lead is reused through a stable idempotency key rather than duplicated.
 
-The degraded fixture intentionally returns no owner from routing. That failure prevents the alert and follow-up adapters from running. A healthy replay keeps the same idempotency key, which demonstrates the recovery principle without duplicating the CRM record.
+## UX structure
 
-This keeps the demo deterministic and safe while making the failure handling, guard conditions and replay semantics inspectable in code.
+There are only two primary surfaces.
+
+### Live system
+
+A controlled, step-by-step walkthrough of the full customer journey. The viewer controls the pace and can see:
+
+- the synthetic customer submission,
+- the AI's truthful acknowledgement,
+- the CRM record being created,
+- the hidden routing regression,
+- Watchdog identifying the failed business assertion,
+- guarded downstream actions,
+- and a safe replay after the mapping fix.
+
+### System model
+
+A spatial, interactive model that pulls Watchdog apart into five responsibility layers:
+
+1. Synthetic probe
+2. Journey contract
+3. Observer
+4. Guard layer
+5. Evidence + recovery
+
+The model uses Anime.js for layer focus, signal tracing and spatial feedback. Pointer movement changes the model perspective and each layer can be brought forward for inspection.
+
+## Data boundary
+
+This prototype uses deterministic fixtures only.
+
+- No real customer identities
+- No live CRM
+- No client Slack workspace
+- No production credentials
+- Stable synthetic idempotency key
+- Guarded downstream side effects
+
+The intent is to demonstrate how a production design could be reasoned about safely without pretending the prototype itself has production security controls.
 
 ## Stack
 
-- Next.js 16.3.8
-- React 19.3
+- Next.js 16
+- React 19
 - TypeScript
 - Tailwind CSS 4
-- Motion
 - Anime.js
+- Motion
 - Lucide React
-
-The incident drawer motion language is adapted from the open-source KokonutUI Smooth Drawer pattern (MIT), with the product UI and interaction model rebuilt for this prototype.
-
-## Why these motion libraries
-
-Motion handles stateful UI transitions, layout movement and the incident drawer.
-
-Anime.js is used where motion explains system behaviour: the live verification sequence, execution-path tracing in the under-the-hood view, and concise architecture tooltips. It is deliberately not used as decorative motion.
 
 ## Run locally
 
@@ -126,8 +94,25 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Open `http://localhost:3000`.
 
-## Scope
+## API
 
-This is a front-end product prototype with deterministic demo data. It is designed to demonstrate product thinking, workflow architecture, failure handling and client-facing UX. It does not connect to real CRM, chatbot, email or automation accounts.
+The visible walkthrough calls a deterministic server-side runner:
+
+```text
+POST /api/watchdog/run
+```
+
+The runner models:
+
+```text
+synthetic webhook
+  → qualification adapter
+  → idempotent CRM upsert
+  → routing rule
+  → guarded team notification
+  → guarded follow-up task
+```
+
+This is a representative product prototype, not an existing ButtarDev service and not a reconstruction of any confidential client system.
