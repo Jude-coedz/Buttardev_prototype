@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box, ChevronRight } from "lucide-react";
+import { Box, Check, ChevronRight, Shapes } from "lucide-react";
 
 const steps = [
   { href: "/", label: "Customer site" },
@@ -23,49 +23,75 @@ function stepIndex(pathname: string) {
 export function DemoStepbar() {
   const pathname = usePathname();
   const architectureActive = pathname.startsWith("/architecture");
-  const current = architectureActive ? -1 : stepIndex(pathname);
+  const useCasesActive = pathname.startsWith("/use-cases");
+  const deepDive = architectureActive || useCasesActive;
+  const current = deepDive ? -1 : stepIndex(pathname);
 
   return (
-    <div className="sticky top-0 z-50 border-b border-black/10 bg-[#111318] text-white">
-      <div className="mx-auto flex min-h-[52px] max-w-[1480px] items-center gap-4 px-4 md:px-7">
-        <Link href="/" className="shrink-0 text-[14px] font-semibold tracking-[-0.02em]">
+    <div className="sticky top-0 z-50 border-b border-white/10 bg-[#111318] text-white shadow-[0_8px_28px_rgba(17,19,24,.12)]">
+      <div className="mx-auto flex min-h-[56px] max-w-[1480px] items-center gap-4 px-4 md:px-7">
+        <Link href="/" className="shrink-0 text-[15px] font-semibold tracking-[-0.025em]">
           Journey Watchdog
         </Link>
 
         <span className="hidden h-5 w-px bg-white/15 md:block" />
 
-        <nav aria-label="Demo journey" className="min-w-0 flex-1 overflow-x-auto">
-          <div className="flex min-w-max items-center gap-1">
-            {steps.map((step, index) => (
-              <div key={step.href} className="flex items-center">
-                <Link
-                  href={step.href}
-                  className={
-                    index === current
-                      ? "rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#111318]"
-                      : index < current
-                        ? "rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/75 transition hover:bg-white/10 hover:text-white"
-                        : "rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/45 transition hover:bg-white/10 hover:text-white/80"
-                  }
-                >
-                  <span className="mr-1.5 font-mono text-[11px] opacity-60">{index + 1}</span>
-                  {step.label}
-                </Link>
-                {index < steps.length - 1 ? <ChevronRight size={13} className="mx-0.5 text-white/20" /> : null}
-              </div>
-            ))}
+        <nav aria-label="Demo journey" className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]">
+          <div className="flex min-w-max items-center gap-1.5">
+            {steps.map((step, index) => {
+              const active = index === current;
+              const completed = current >= 0 && index < current;
+              return (
+                <div key={step.href} className="flex items-center">
+                  <Link
+                    href={step.href}
+                    aria-current={active ? "page" : undefined}
+                    className={
+                      active
+                        ? "inline-flex h-9 items-center rounded-lg bg-[#5665ff] px-3.5 text-[14px] font-semibold text-white shadow-[0_5px_16px_rgba(86,101,255,.3)]"
+                        : completed
+                          ? "inline-flex h-9 items-center rounded-lg px-3.5 text-[14px] font-medium text-white/82 transition hover:bg-white/10 hover:text-white"
+                          : "inline-flex h-9 items-center rounded-lg px-3.5 text-[14px] font-medium text-white/48 transition hover:bg-white/10 hover:text-white/85"
+                    }
+                  >
+                    {completed ? (
+                      <Check size={14} className="mr-1.5 text-[#62dda5]" />
+                    ) : (
+                      <span className="mr-1.5 font-mono text-[12px] opacity-65">{index + 1}</span>
+                    )}
+                    {step.label}
+                  </Link>
+                  {index < steps.length - 1 ? <ChevronRight size={14} className="mx-0.5 text-white/20" /> : null}
+                </div>
+              );
+            })}
           </div>
         </nav>
 
-        <Link
-          href="/architecture"
-          className={architectureActive
-            ? "hidden shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#111318] sm:inline-flex"
-            : "hidden shrink-0 items-center gap-2 rounded-lg border border-white/15 px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:border-white/30 hover:bg-white/10 hover:text-white sm:inline-flex"}
-        >
-          <Box size={14} />
-          3D architecture
-        </Link>
+        <div className="hidden shrink-0 items-center gap-2 md:flex">
+          <Link
+            href="/architecture"
+            className={
+              architectureActive
+                ? "inline-flex h-9 items-center gap-2 rounded-lg bg-white px-3.5 text-[13px] font-semibold text-[#111318]"
+                : "inline-flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3.5 text-[13px] font-semibold text-white/72 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+            }
+          >
+            <Box size={14} />
+            3D model
+          </Link>
+          <Link
+            href="/use-cases"
+            className={
+              useCasesActive
+                ? "inline-flex h-9 items-center gap-2 rounded-lg bg-white px-3.5 text-[13px] font-semibold text-[#111318]"
+                : "inline-flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3.5 text-[13px] font-semibold text-white/72 transition hover:border-white/30 hover:bg-white/10 hover:text-white"
+            }
+          >
+            <Shapes size={14} />
+            Use cases
+          </Link>
+        </div>
       </div>
     </div>
   );
