@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Journey Watchdog — ButtarDev Prototype",
+  title: "Journey Watchdog — Interactive ButtarDev Prototype",
   description:
-    "A business-journey assurance prototype for service-business automation.",
+    "An interactive prototype showing how Journey Watchdog observes a customer workflow, catches broken business outcomes, and recovers safely.",
 };
 
 export default function RootLayout({
