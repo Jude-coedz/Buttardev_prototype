@@ -129,22 +129,22 @@ export function AutomationRun() {
 
   return (
     <div ref={containerRef}>
-      <div className="mx-auto max-w-[1400px] px-5 py-14 md:px-8 md:py-20">
-        <div className="grid gap-10 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+      <div className="mx-auto max-w-[1400px] px-5 py-8 md:px-8 md:py-10">
+        <div className="grid gap-6 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
           <div>
             <p className="text-[15px] font-semibold text-[var(--blue)]">Step 2 · Automation</p>
-            <h1 className="mt-4 max-w-[760px] text-[46px] font-semibold leading-[1.02] tracking-[-0.06em] text-[var(--ink)] md:text-[62px]">
+            <h1 className="mt-3 max-w-[760px] text-[40px] font-semibold leading-[1.02] tracking-[-0.055em] text-[var(--ink)] md:text-[50px]">
               The enquiry is now inside the workflow.
             </h1>
           </div>
           <div className="max-w-[610px] lg:justify-self-end">
-            <p className="text-[18px] leading-8 text-[var(--copy)]">
+            <p className="text-[17px] leading-7 text-[var(--copy)]">
               This is the automation ButtarDev could ship for a service business. Every handoff looks normal until one quiet routing rule stops producing the state the next tools depend on.
             </p>
             <button
               onClick={run}
               disabled={running}
-              className="mt-6 inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--ink)] px-5 text-[15px] font-semibold text-white transition hover:bg-[#2a2d35] disabled:cursor-wait disabled:opacity-65"
+              className="mt-4 inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--ink)] px-5 text-[15px] font-semibold text-white transition hover:bg-[#2a2d35] disabled:cursor-wait disabled:opacity-65"
             >
               {running ? <LoaderCircle size={17} className="animate-spin" /> : <CircleDot size={17} />}
               {running ? "Running the automation" : finished ? "Run it again" : "Run the automation"}
@@ -152,7 +152,7 @@ export function AutomationRun() {
           </div>
         </div>
 
-        <section className="mt-14 overflow-hidden rounded-[28px] border border-[var(--hairline)] bg-white shadow-[0_28px_90px_rgba(17,19,24,.06)]">
+        <section className="mt-8 overflow-hidden rounded-[28px] border border-[var(--hairline)] bg-white shadow-[0_28px_90px_rgba(17,19,24,.06)]">
           <div className="flex items-center justify-between border-b border-[var(--hairline)] px-6 py-4 md:px-7">
             <div>
               <p className="text-[15px] font-semibold text-[var(--ink)]">Residential enquiry · WD-1842</p>
@@ -174,9 +174,9 @@ export function AutomationRun() {
                     <div
                       data-node={index}
                       data-state={state}
-                      className="flow-node relative z-10 h-full min-h-[205px] rounded-[20px] border border-[var(--hairline)] bg-white p-5"
+                      className="flow-node relative z-10 h-full min-h-[190px] rounded-[20px] border border-[var(--hairline)] bg-white p-5 pt-14"
                     >
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="absolute left-5 right-5 top-4 flex items-center justify-between gap-3">
                         <span
                           className={
                             state === "failed"
@@ -204,9 +204,9 @@ export function AutomationRun() {
                         )}
                       </div>
 
-                      <p className="mt-8 text-[17px] font-semibold tracking-[-0.025em] text-[var(--ink)]">{step.title}</p>
-                      <p className="mt-1 text-[14px] font-medium text-[var(--muted)]">{step.tool}</p>
-                      <p className="mt-4 text-[14px] leading-6 text-[var(--copy)]">
+                      <p className="text-[21px] font-semibold tracking-[-0.03em] text-[var(--ink)]">{step.title}</p>
+                      <p className="mt-1 text-[15px] font-medium text-[var(--muted)]">{step.tool}</p>
+                      <p className="mt-4 text-[15px] leading-6 text-[var(--copy)]">
                         {state === "failed"
                           ? "Routing returned no owner."
                           : state === "blocked"
@@ -214,9 +214,9 @@ export function AutomationRun() {
                             : step.detail}
                       </p>
 
-                      <p className="absolute bottom-4 left-5 font-mono text-[13px] text-[#9aa1aa]">
+                      <span className="absolute right-4 top-4 inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-[#dfe3e8] bg-[#f7f8fa] px-2 font-mono text-[12px] font-semibold text-[#7b8490]">
                         {String(index + 1).padStart(2, "0")}
-                      </p>
+                      </span>
                     </div>
 
                     {index < steps.length - 1 ? (
@@ -237,7 +237,7 @@ export function AutomationRun() {
             </div>
 
             {finished ? (
-              <div className="mt-6 grid gap-5 rounded-[22px] border border-[#f2c7cf] bg-[#fff8f9] p-5 md:grid-cols-[1fr_auto] md:items-center md:p-6">
+              <div className="mt-5 grid gap-5 rounded-[22px] border border-[#f2c7cf] bg-[#fff8f9] p-5 md:grid-cols-[1fr_auto] md:items-center md:p-6">
                 <div className="flex items-start gap-4">
                   <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--rose-soft)] text-[var(--rose)]">
                     <TriangleAlert size={20} />
@@ -246,7 +246,7 @@ export function AutomationRun() {
                     <p className="text-[18px] font-semibold tracking-[-0.025em] text-[var(--ink)]">
                       The workflow stopped at owner assignment.
                     </p>
-                    <p className="mt-2 max-w-3xl text-[15px] leading-7 text-[var(--copy)]">
+                    <p className="mt-2 max-w-3xl text-[17px] leading-7 text-[#4a515c]">
                       The form worked. The AI worked. The CRM created the lead. There is no platform outage. The next question is what the CRM actually received.
                     </p>
                   </div>
