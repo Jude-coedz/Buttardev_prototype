@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { animate } from "animejs";
 import {
@@ -14,11 +14,9 @@ import {
   Globe2,
   LockKeyhole,
   MessageSquare,
-  Play,
   Radar,
   Route,
   ShieldCheck,
-  Sparkles,
   TriangleAlert,
   UserRoundCheck,
 } from "lucide-react";
@@ -115,8 +113,6 @@ export function WatchdogInspection() {
   const failed = active >= 3;
   const complete = active === trace.length - 1;
 
-  const progressWidth = useMemo(() => `${(active / (trace.length - 1)) * 100}%`, [active]);
-
   return (
     <div ref={shellRef} className="mx-auto max-w-[1420px] px-5 py-7 md:px-8 md:py-9">
       <section className="grid gap-7 lg:grid-cols-[.88fr_1.12fr] lg:items-end">
@@ -176,6 +172,30 @@ export function WatchdogInspection() {
         </div>
       </section>
 
+      <section className="mt-5 grid gap-4 md:grid-cols-3">
+        <div className="rounded-[22px] border border-[var(--hairline)] bg-white p-5">
+          <p className="text-[14px] font-semibold text-[var(--blue)]">Observe mode</p>
+          <h3 className="mt-2 text-[19px] font-semibold tracking-[-0.025em] text-[var(--ink)]">Usually sits beside the automation.</h3>
+          <p className="mt-2 text-[15px] leading-6 text-[var(--copy)]">
+            Watchdog can read synthetic probe results, webhook payloads, API responses, execution logs, and selected CRM state without changing the workflow itself.
+          </p>
+        </div>
+        <div className="rounded-[22px] border border-[var(--hairline)] bg-white p-5">
+          <p className="text-[14px] font-semibold text-[#a36c16]">Guard mode</p>
+          <h3 className="mt-2 text-[19px] font-semibold tracking-[-0.025em] text-[var(--ink)]">Only the risky action needs an inline gate.</h3>
+          <p className="mt-2 text-[15px] leading-6 text-[var(--copy)]">
+            Before a payment, customer email, Slack alert, task, or other side effect runs, the adapter can ask Watchdog whether its prerequisite contract passed.
+          </p>
+        </div>
+        <div className="rounded-[22px] border border-[var(--hairline)] bg-white p-5">
+          <p className="text-[14px] font-semibold text-[#707986]">What it is not</p>
+          <h3 className="mt-2 text-[19px] font-semibold tracking-[-0.025em] text-[var(--ink)]">Not an autonomous code editor or API-key monitor.</h3>
+          <p className="mt-2 text-[15px] leading-6 text-[var(--copy)]">
+            Expired credentials or downtime can be signals, but the core job is to verify the business outcome. A human or deployment pipeline applies code/config fixes; Watchdog verifies the recovery.
+          </p>
+        </div>
+      </section>
+
       <section className="mt-5 overflow-hidden rounded-[28px] bg-[#111318] text-white shadow-[0_30px_100px_rgba(17,19,24,.16)]">
         <div className="grid lg:grid-cols-[1.2fr_.8fr]">
           <div className="border-b border-white/10 p-5 md:p-7 lg:border-b-0 lg:border-r">
@@ -191,10 +211,6 @@ export function WatchdogInspection() {
             </div>
 
             <div className="relative mt-7">
-              <div className="absolute left-[7%] right-[7%] top-[30px] hidden h-px bg-white/10 lg:block">
-                <span className="watchdog-line block h-full origin-left transition-[width] duration-500" style={{ width: progressWidth }} />
-              </div>
-
               <div className="relative grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
                 {trace.map((item, index) => {
                   const Icon = item.icon;
@@ -308,7 +324,7 @@ export function WatchdogInspection() {
       </section>
 
       {complete && run?.incident ? (
-        <section className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+        <section className="mt-5">
           <div className="rounded-[24px] border border-[#efbac4] bg-[#fff7f8] p-5 md:p-6">
             <div className="flex items-start gap-4">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--rose)] text-white">
@@ -323,19 +339,6 @@ export function WatchdogInspection() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-between gap-5 rounded-[24px] border border-[#dcdfff] bg-[#f3f4ff] p-5 md:p-6">
-            <div>
-              <p className="text-[18px] font-semibold text-[#252d8f]">This is only one Watchdog use case.</p>
-              <p className="mt-2 text-[16px] leading-7 text-[#596196]">The same pattern can guard invoice approvals, onboarding, AI actions, data syncs, fulfilment and other multi-tool workflows.</p>
-            </div>
-            <button
-              onClick={() => router.push("/use-cases")}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#5665ff] px-4 text-[14px] font-semibold text-white transition hover:bg-[#4352ec]"
-            >
-              Explore Watchdog use cases
-              <ArrowRight size={16} />
-            </button>
-          </div>
         </section>
       ) : null}
 
