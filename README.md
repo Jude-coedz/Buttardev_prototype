@@ -69,11 +69,14 @@ The weekly report is intentionally client-readable. The larger opportunity is tu
 
 ## Interaction
 
-- **Run verification** animates the synthetic journey.
-- The degraded scenario reproduces the owner-assignment failure.
-- **Inspect** opens the incident evidence drawer.
-- **Preview after fix** switches to the repaired journey.
-- Navigation exposes journey contracts, run history and a client-facing weekly report.
+The rebuilt experience is intentionally self-explanatory for a first-time viewer:
+
+1. **Overview** explains the product in business language: Watchdog proves that the customer outcome still completes after an automation ships.
+2. **Run Watchdog** sends the synthetic BrightHome enquiry through the six-step journey and reveals the routing regression as it happens.
+3. **Incident evidence** explains the customer impact, expected vs actual state, protected downstream actions, the synthetic data boundary and idempotent recovery.
+4. **Under the hood** lets the viewer inspect the probe, journey contract, adapters, evaluator, guard rails and evidence/replay layers. Anime.js is used to trace the check through these layers and animate the explanatory tooltips.
+5. **Trust & controls** separates protections that are actually implemented in the prototype from production security controls that would still be required.
+6. **Client proof** shows how ongoing support can be translated into a client-readable assurance report instead of raw workflow logs.
 
 ## Automation architecture
 
@@ -114,7 +117,7 @@ The incident drawer motion language is adapted from the open-source KokonutUI Sm
 
 Motion handles stateful UI transitions, layout movement and the incident drawer.
 
-Anime.js is intentionally limited to the live verification sequence so animation communicates system activity rather than becoming decoration.
+Anime.js is used where motion explains system behaviour: the live verification sequence, execution-path tracing in the under-the-hood view, and concise architecture tooltips. It is deliberately not used as decorative motion.
 
 ## Run locally
 
