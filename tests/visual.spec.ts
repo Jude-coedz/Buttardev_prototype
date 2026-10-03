@@ -62,7 +62,7 @@ test("the architecture route is now an Anime.js system anatomy rather than a 3D 
   await expect(page.locator("canvas")).toHaveCount(0);
   await expect(page.getByText("CLIENT AUTOMATION · unchanged")).toBeVisible();
   await expect(page.getByText("control plane")).toBeVisible();
-  await expect(page.getByText("Synthetic probe")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Synthetic probe starts outside" })).toBeVisible();
 
   await page.getByRole("button", { name: "Next layer" }).click();
   await expect(page.getByText("Observe handoffs")).toBeVisible();
