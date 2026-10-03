@@ -74,7 +74,7 @@ test("the architecture route is now an Anime.js system anatomy rather than a 3D 
   await expect(page.getByText("Guard a side effect")).toBeVisible();
 
   await page.getByRole("button", { name: "Next layer" }).click();
-  await expect(page.getByText("Evidence + replay")).toBeVisible();
+  await expect(page.getByRole("complementary").getByText("Evidence + replay")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Watchdog use cases" })).toBeVisible();
 
   const overflow = await page.evaluate(() => ({
