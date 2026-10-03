@@ -110,6 +110,24 @@ export function IncidentDrawer({ open, onClose, onReplay }: IncidentDrawerProps)
             </motion.div>
 
             <div className="flex-1 overflow-y-auto px-7 py-7">
+              <motion.section variants={itemVariants} className="mb-8 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-950">Data used in this check</p>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Synthetic only</span>
+                </div>
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <div className="rounded-xl bg-white/80 p-3">
+                    <p className="text-xs font-semibold text-slate-400">Test identity</p>
+                    <p className="mt-1 font-mono text-[12px] text-slate-700">watchdog+1842@demo.local</p>
+                  </div>
+                  <div className="rounded-xl bg-white/80 p-3">
+                    <p className="text-xs font-semibold text-slate-400">Replay key</p>
+                    <p className="mt-1 font-mono text-[12px] text-slate-700">watchdog:...:1842</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-emerald-900/65">No live customer record or external client credential is connected to this prototype run.</p>
+              </motion.section>
+
               <motion.section variants={itemVariants} className="mb-8">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-slate-950">What the customer would feel</p>
@@ -165,7 +183,7 @@ export function IncidentDrawer({ open, onClose, onReplay }: IncidentDrawerProps)
                     No customer-facing action needs to be replayed
                   </div>
                   <p className="mb-5 text-[15px] leading-6 text-slate-300">
-                    Fix the owner mapping, then replay from the routing step. Watchdog reuses the same test lead instead of creating a duplicate CRM record.
+                    Fix the owner mapping, then replay from the routing boundary. Watchdog keeps the same idempotency key, so the existing synthetic CRM record is reused instead of creating a duplicate.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <button
