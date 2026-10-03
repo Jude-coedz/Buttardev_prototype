@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box, Check, ChevronRight, Shapes } from "lucide-react";
+import { Box, Check, ChevronRight } from "lucide-react";
 
 const steps = [
   { href: "/", label: "Customer site" },
@@ -23,9 +23,7 @@ function stepIndex(pathname: string) {
 export function DemoStepbar() {
   const pathname = usePathname();
   const architectureActive = pathname.startsWith("/architecture");
-  const useCasesActive = pathname.startsWith("/use-cases");
-  const deepDive = architectureActive || useCasesActive;
-  const current = deepDive ? -1 : stepIndex(pathname);
+  const current = architectureActive ? -1 : stepIndex(pathname);
 
   return (
     <div className="sticky top-0 z-50 border-b border-white/10 bg-[#111318] text-white shadow-[0_8px_28px_rgba(17,19,24,.12)]">
