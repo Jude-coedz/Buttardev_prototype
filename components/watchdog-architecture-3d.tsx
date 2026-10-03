@@ -2,34 +2,34 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { animate, stagger } from "animejs";
+import { gsap } from "gsap";
 import {
   ArrowLeft,
   ArrowRight,
   Bot,
   Braces,
+  Check,
+  DatabaseZap,
   Eye,
   LockKeyhole,
   Play,
   RefreshCw,
-  RotateCcw,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
-const faces = [
+const layers = [
   {
-    id: "overview",
+    id: "assembled",
     index: "00",
-    label: "Watchdog",
-    eyebrow: "Overview",
-    title: "One control plane around the workflow.",
-    body: "The cube is a visual model, not a literal server. Each face represents one responsibility in the Watchdog system. Rotate it to understand how the pieces work together.",
-    sits: "Around the automation",
-    sees: "Journey events and business contracts",
-    does: "Coordinates observation, assertions, guards, and recovery evidence",
-    rotation: { x: -14, y: 24 },
-    accent: "#7d7cff",
+    label: "Core",
+    eyebrow: "Assembled Watchdog",
+    title: "One control layer wrapped around the automation.",
+    body: "This is a conceptual product teardown of Watchdog. The system stays beside the client's automation, observes handoffs, evaluates business assertions, gates selected side effects, and stores evidence for recovery.",
+    sits: "Beside the client automation",
+    receives: "Journey events + client-defined business contracts",
+    produces: "A verified outcome or an isolated incident",
+    accent: "#8d8cff",
     icon: ShieldCheck,
   },
   {
@@ -37,27 +37,25 @@ const faces = [
     index: "01",
     label: "Probe",
     eyebrow: "Synthetic probe",
-    title: "Enter through the same path as a customer.",
-    body: "A safe synthetic event starts outside the client's workflow and enters through the real form, webhook, API, or trigger.",
+    title: "Start with a safe event that behaves like a real customer.",
+    body: "The probe begins outside the automation and enters through the same public form, webhook, API, or trigger. That makes the test representative without borrowing a real customer's identity.",
     sits: "Outside the automation",
-    sees: "The public customer-facing entry point",
-    does: "Creates a test event with a stable replay key",
-    rotation: { x: -92, y: 0 },
-    accent: "#ff704d",
+    receives: "Schedule, deployment event, or operator-triggered check",
+    produces: "Synthetic event + stable replay key",
+    accent: "#ff7654",
     icon: Bot,
   },
   {
-    id: "observe",
+    id: "observer",
     index: "02",
     label: "Observe",
     eyebrow: "Handoff observer",
-    title: "Read the state crossing between tools.",
-    body: "Watchdog can consume selected webhook payloads, workflow events, API responses, logs, and CRM state without becoming the system of record.",
-    sits: "Beside the integrations",
-    sees: "Website → AI → CRM → routing outputs",
-    does: "Captures expected-vs-actual evidence at each boundary",
-    rotation: { x: 0, y: -90 },
-    accent: "#5ea7ff",
+    title: "Read the state leaving each system.",
+    body: "Watchdog consumes only the signals needed to prove the journey: webhook payloads, execution events, selected API responses, logs, or CRM state. It does not replace those systems.",
+    sits: "Along integration boundaries",
+    receives: "Website → AI → CRM → routing outputs",
+    produces: "Normalized expected-vs-actual evidence",
+    accent: "#5aa8ff",
     icon: Eye,
   },
   {
@@ -66,12 +64,11 @@ const faces = [
     label: "Contract",
     eyebrow: "Contract engine",
     title: "Ask whether the business promise is still true.",
-    body: "A successful API call is not enough. This face represents the assertions that matter to the client: one owner, enough approvals, stock reserved, truthful customer messaging, and more.",
+    body: "A 200 response is not the product outcome. The contract engine evaluates the client rules that matter: one owner exists, approvals are sufficient, stock is reserved, or customer messaging remains truthful.",
     sits: "Inside the Watchdog service",
-    sees: "Observed state + client-defined business rule",
-    does: "Returns a pass/fail assertion with evidence",
-    rotation: { x: 0, y: 180 },
-    accent: "#d875ff",
+    receives: "Observed state + client-defined assertion",
+    produces: "Pass/fail decision + evidence",
+    accent: "#d975ff",
     icon: Braces,
   },
   {
@@ -79,13 +76,12 @@ const faces = [
     index: "04",
     label: "Guard",
     eyebrow: "Guard layer",
-    title: "Hold risky actions when a prerequisite fails.",
-    body: "Only a small gate needs to sit inline. Before a payment, task, message, fulfilment action, or other side effect runs, its adapter can ask whether the required contract passed.",
+    title: "Stop bad state before it becomes a real action.",
+    body: "Only this small piece needs to sit inline. Before a sensitive side effect runs, its adapter can ask Watchdog whether the prerequisite contract passed.",
     sits: "Immediately before selected side effects",
-    sees: "Assertion result + intended action",
-    does: "Allows or holds the side effect",
-    rotation: { x: 0, y: 90 },
-    accent: "#ffc44d",
+    receives: "Assertion result + intended action",
+    produces: "Allow or hold",
+    accent: "#ffc650",
     icon: LockKeyhole,
   },
   {
@@ -93,102 +89,161 @@ const faces = [
     index: "05",
     label: "Replay",
     eyebrow: "Evidence + replay",
-    title: "Remember the failure and verify the fix.",
-    body: "Watchdog does not rewrite production code. A human or deployment pipeline applies the fix. Watchdog keeps the failed boundary and identifiers so it can verify recovery from the right point.",
+    title: "Remember where the journey failed and verify the recovery.",
+    body: "Watchdog does not rewrite production code. A human or deployment pipeline applies the fix. Watchdog preserves the failed boundary, identifiers, and replay key so verification resumes from the correct point.",
     sits: "Watchdog operational store",
-    sees: "Failure context + corrected configuration",
-    does: "Produces a bounded replay point and verified recovery",
-    rotation: { x: 90, y: 0 },
-    accent: "#54d99b",
-    icon: RefreshCw,
+    receives: "Failure context + corrected configuration",
+    produces: "Bounded replay + verified recovery",
+    accent: "#56daa0",
+    icon: DatabaseZap,
   },
 ] as const;
 
-const faceTransforms = {
-  front: "translateZ(108px)",
-  back: "rotateY(180deg) translateZ(108px)",
-  right: "rotateY(90deg) translateZ(108px)",
-  left: "rotateY(-90deg) translateZ(108px)",
-  top: "rotateX(90deg) translateZ(108px)",
-  bottom: "rotateX(-90deg) translateZ(108px)",
-} as const;
+const layerIds = ["probe", "observer", "contract", "guard", "replay"] as const;
 
-const faceMap = [
-  { key: "front", label: "WATCHDOG", sub: "overview", accent: "#7d7cff", target: 0 },
-  { key: "top", label: "PROBE", sub: "synthetic input", accent: "#ff704d", target: 1 },
-  { key: "right", label: "OBSERVE", sub: "handoffs", accent: "#5ea7ff", target: 2 },
-  { key: "back", label: "CONTRACT", sub: "business truth", accent: "#d875ff", target: 3 },
-  { key: "left", label: "GUARD", sub: "side effects", accent: "#ffc44d", target: 4 },
-  { key: "bottom", label: "REPLAY", sub: "recovery", accent: "#54d99b", target: 5 },
-] as const;
+const layerMeta = {
+  probe: { title: "SYNTHETIC PROBE", subtitle: "safe input", accent: "#ff7654" },
+  observer: { title: "HANDOFF OBSERVER", subtitle: "boundary state", accent: "#5aa8ff" },
+  contract: { title: "CONTRACT ENGINE", subtitle: "business truth", accent: "#d975ff" },
+  guard: { title: "GUARD LAYER", subtitle: "side-effect gate", accent: "#ffc650" },
+  replay: { title: "EVIDENCE + REPLAY", subtitle: "recovery memory", accent: "#56daa0" },
+} as const;
 
 export function WatchdogArchitecture3D() {
   const rootRef = useRef<HTMLDivElement>(null);
-  const cubeRef = useRef<HTMLDivElement>(null);
+  const signalRef = useRef<HTMLDivElement>(null);
+  const traceTimeline = useRef<gsap.core.Timeline | null>(null);
   const [active, setActive] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [tracing, setTracing] = useState(false);
 
-  const face = faces[active];
-  const FaceIcon = face.icon;
+  const current = layers[active];
+  const CurrentIcon = current.icon;
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
-    const tiles = root.querySelectorAll(".cube-field-tile");
-    const animation = animate(tiles, {
-      translateY: [0, -7, 0],
-      rotate: [0, 45, 0],
-      opacity: [0.12, 0.42, 0.12],
-      delay: stagger(38, { grid: [8, 8], from: "center" }),
-      duration: 3400,
-      loop: true,
-      ease: "inOut(2)",
-    });
+    const context = gsap.context(() => {
+      gsap.to(".ambient-pip", {
+        y: -7,
+        opacity: 0.34,
+        duration: 2.8,
+        stagger: {
+          each: 0.03,
+          grid: [9, 6],
+          from: "center",
+          yoyo: true,
+          repeat: -1,
+        },
+        ease: "sine.inOut",
+      });
+    }, root);
 
-    return () => {
-      animation.cancel();
-    };
+    return () => context.revert();
   }, []);
 
   useEffect(() => {
-    const cube = cubeRef.current;
     const root = rootRef.current;
-    if (!cube || !root) return;
+    if (!root) return;
 
-    const activeFace = root.querySelector(`[data-cube-face="${active}"]`);
+    const plates = Array.from(root.querySelectorAll<HTMLElement>(".teardown-plate"));
 
-    animate(cube, {
-      rotateX: face.rotation.x,
-      rotateY: face.rotation.y,
-      scale: [0.96, 1.04, 1],
-      duration: 920,
-      ease: "inOut(4)",
+    if (active === 0) {
+      plates.forEach((plate, index) => {
+        gsap.to(plate, {
+          x: index * 3,
+          y: index * 5,
+          rotateX: 57,
+          rotateZ: -8,
+          scale: 1 - index * 0.012,
+          opacity: 1,
+          duration: 0.78,
+          ease: "power3.inOut",
+          overwrite: true,
+        });
+      });
+      return;
+    }
+
+    plates.forEach((plate, index) => {
+      const selectedIndex = active - 1;
+      const distance = index - selectedIndex;
+      const y = distance * 82;
+      const x = distance * 14;
+      const selected = index === selectedIndex;
+
+      gsap.to(plate, {
+        x,
+        y,
+        rotateX: 57,
+        rotateZ: -8,
+        scale: selected ? 1.035 : 0.985,
+        opacity: selected ? 1 : 0.34,
+        duration: 0.82,
+        ease: "power3.inOut",
+        overwrite: true,
+      });
+    });
+  }, [active]);
+
+  const traceJourney = () => {
+    const root = rootRef.current;
+    const signal = signalRef.current;
+    if (!root || !signal || tracing) return;
+
+    traceTimeline.current?.kill();
+    setTracing(true);
+    setActive(0);
+
+    const positions = [
+      { x: -235, y: -110, stage: 1 },
+      { x: -115, y: -54, stage: 2 },
+      { x: 0, y: 0, stage: 3 },
+      { x: 115, y: 58, stage: 4 },
+      { x: 232, y: 112, stage: 5 },
+    ];
+
+    gsap.set(signal, { x: -330, y: -155, opacity: 1, scale: 0.7 });
+
+    const tl = gsap.timeline({
+      defaults: { duration: 0.72, ease: "power2.inOut" },
+      onComplete: () => {
+        setTracing(false);
+        gsap.to(signal, { opacity: 0, scale: 0.4, duration: 0.35 });
+      },
     });
 
-    if (activeFace) {
-      animate(activeFace, {
-        scale: [0.94, 1.04, 1],
-        duration: 620,
-        ease: "out(4)",
-      });
-    }
-  }, [active, face.rotation.x, face.rotation.y]);
+    positions.forEach((point, index) => {
+      tl.call(() => setActive(point.stage))
+        .to(signal, {
+          x: point.x,
+          y: point.y,
+          scale: 1,
+        })
+        .to(
+          root.querySelectorAll(".trace-line")[index],
+          {
+            opacity: 0.95,
+            scaleX: 1,
+            duration: 0.38,
+            transformOrigin: "left center",
+          },
+          "<",
+        );
 
-  const playCube = async () => {
-    if (playing) return;
-    setPlaying(true);
+      if (point.stage === 4) {
+        tl.to({}, { duration: 0.55 });
+      }
+    });
 
-    for (let index = 0; index < faces.length; index += 1) {
-      setActive(index);
-      await new Promise((resolve) => window.setTimeout(resolve, 1050));
-    }
-
-    setPlaying(false);
+    traceTimeline.current = tl;
   };
 
   const reset = () => {
+    traceTimeline.current?.kill();
+    setTracing(false);
     setActive(0);
+    if (signalRef.current) gsap.set(signalRef.current, { opacity: 0 });
   };
 
   return (
@@ -204,9 +259,9 @@ export function WatchdogArchitecture3D() {
               <ArrowLeft size={17} />
             </Link>
             <div>
-              <p className="text-[14px] font-semibold text-[#a5a7ff]">Interactive Watchdog cube · Anime.js</p>
+              <p className="text-[14px] font-semibold text-[#aaa9ff]">Inside Watchdog · GSAP teardown</p>
               <h1 className="mt-0.5 text-[30px] font-semibold tracking-[-0.05em] md:text-[39px]">
-                Rotate the cube to understand the Watchdog system.
+                Peel the system apart and follow one failed journey through it.
               </h1>
             </div>
           </div>
@@ -216,80 +271,120 @@ export function WatchdogArchitecture3D() {
               onClick={reset}
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/12 bg-white/[.04] px-3.5 text-[14px] font-semibold text-white/65 transition hover:bg-white/[.08] hover:text-white"
             >
-              <RotateCcw size={15} />
-              Reset
+              <RefreshCw size={15} />
+              Reset core
             </button>
             <button
-              onClick={playCube}
-              disabled={playing}
+              onClick={traceJourney}
+              disabled={tracing}
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold text-[#111318] transition hover:bg-[#eef0f3] disabled:opacity-60"
             >
-              {playing ? <RefreshCw size={15} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-              {playing ? "Touring cube" : "Play cube tour"}
+              {tracing ? <RefreshCw size={15} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
+              {tracing ? "Tracing failure" : "Trace failed journey"}
             </button>
           </div>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
-          <section className="relative min-h-[590px] overflow-hidden rounded-[30px] border border-white/10 bg-[#101116] shadow-[0_30px_100px_rgba(0,0,0,.28)]">
-            <div className="pointer-events-none absolute inset-0 grid grid-cols-8 grid-rows-8 gap-7 p-8">
-              {Array.from({ length: 64 }).map((_, index) => (
-                <span
-                  key={index}
-                  className="cube-field-tile m-auto h-2 w-2 rounded-[3px] border border-white/12 bg-white/5"
-                />
+          <section className="relative min-h-[600px] overflow-hidden rounded-[30px] border border-white/10 bg-[#101116] shadow-[0_30px_100px_rgba(0,0,0,.28)]">
+            <div className="pointer-events-none absolute inset-0 grid grid-cols-9 grid-rows-6 gap-8 p-8">
+              {Array.from({ length: 54 }).map((_, index) => (
+                <span key={index} className="ambient-pip m-auto h-1.5 w-1.5 rounded-full bg-white/12" />
               ))}
             </div>
 
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(125,124,255,.19),transparent_27%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(141,140,255,.18),transparent_31%)]" />
 
-            <div className="absolute left-5 top-5 z-20 rounded-full border border-white/10 bg-black/25 px-3 py-2 text-[13px] font-semibold text-white/45 backdrop-blur">
-              CLICK A FACE · OR USE THE TOUR
+            <div className="absolute left-5 top-5 z-30 max-w-[320px] rounded-[16px] border border-white/10 bg-black/25 px-4 py-3 backdrop-blur">
+              <p className="text-[13px] font-semibold text-white/72">WATCHDOG CORE</p>
+              <p className="mt-1 text-[13px] leading-5 text-white/35">
+                Click a layer to isolate it. The object stays still enough to read.
+              </p>
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className="relative h-[216px] w-[216px]"
-                style={{ perspective: "950px" }}
-              >
-                <div
-                  ref={cubeRef}
-                  className="absolute inset-0"
-                  style={{
-                    transformStyle: "preserve-3d",
-                    transform: "rotateX(-14deg) rotateY(24deg)",
-                  }}
-                >
-                  {faceMap.map((item) => (
-                    <button
-                      key={item.key}
-                      data-cube-face={item.target}
-                      onClick={() => setActive(item.target)}
-                      aria-label={`${item.label} face`}
-                      className="absolute inset-0 flex flex-col items-center justify-center border border-white/15 bg-[#171922]/95 text-center shadow-[inset_0_0_50px_rgba(255,255,255,.02)] backdrop-blur-sm"
-                      style={{
-                        transform: faceTransforms[item.key],
-                        backfaceVisibility: "hidden",
-                      }}
-                    >
+            <div className="absolute inset-0 flex items-center justify-center pt-6">
+              <div className="relative h-[390px] w-[650px] max-w-[88%]" style={{ perspective: "1200px" }}>
+                <div className="absolute left-1/2 top-1/2 h-[250px] w-[470px] -translate-x-1/2 -translate-y-1/2">
+                  {layerIds.map((id, index) => {
+                    const meta = layerMeta[id];
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setActive(index + 1)}
+                        aria-label={meta.title}
+                        className="teardown-plate absolute inset-0 overflow-hidden rounded-[30px] border border-white/15 bg-[#171922]/95 text-left shadow-[0_30px_60px_rgba(0,0,0,.34)]"
+                        style={{
+                          transformStyle: "preserve-3d",
+                          transform: `translate3d(${index * 3}px, ${index * 5}px, 0) rotateX(57deg) rotateZ(-8deg) scale(${1 - index * 0.012})`,
+                          zIndex: 20 - index,
+                        }}
+                      >
+                        <div
+                          className="absolute inset-x-0 top-0 h-1"
+                          style={{ backgroundColor: meta.accent }}
+                        />
+
+                        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,.05),transparent_42%)]" />
+
+                        <div className="absolute left-6 top-6">
+                          <span
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
+                            style={{ backgroundColor: `${meta.accent}18`, color: meta.accent }}
+                          >
+                            {id === "probe" ? <Bot size={18} /> : null}
+                            {id === "observer" ? <Eye size={18} /> : null}
+                            {id === "contract" ? <Braces size={18} /> : null}
+                            {id === "guard" ? <LockKeyhole size={18} /> : null}
+                            {id === "replay" ? <DatabaseZap size={18} /> : null}
+                          </span>
+                        </div>
+
+                        <div className="absolute bottom-6 left-6">
+                          <p className="text-[17px] font-semibold tracking-[.035em] text-white">{meta.title}</p>
+                          <p className="mt-1 text-[12px] font-medium uppercase tracking-[.12em] text-white/32">{meta.subtitle}</p>
+                        </div>
+
+                        <div className="absolute right-7 top-7 grid grid-cols-4 gap-2 opacity-45">
+                          {Array.from({ length: 12 }).map((_, dot) => (
+                            <span
+                              key={dot}
+                              className="h-2 w-2 rounded-[3px]"
+                              style={{ backgroundColor: dot % 3 === 0 ? meta.accent : "rgba(255,255,255,.12)" }}
+                            />
+                          ))}
+                        </div>
+
+                        <svg className="absolute bottom-7 right-7 h-[92px] w-[190px] opacity-45" viewBox="0 0 190 92" fill="none">
+                          <path d="M4 74 H54 V44 H98 V20 H184" stroke={meta.accent} strokeWidth="2" />
+                          <path d="M28 88 V58 H76 V68 H132 V42 H176" stroke="rgba(255,255,255,.18)" strokeWidth="2" />
+                          <circle cx="54" cy="44" r="4" fill={meta.accent} />
+                          <circle cx="132" cy="42" r="4" fill={meta.accent} />
+                        </svg>
+                      </button>
+                    );
+                  })}
+
+                  <div
+                    ref={signalRef}
+                    className="pointer-events-none absolute left-1/2 top-1/2 z-40 h-4 w-4 rounded-full bg-white opacity-0 shadow-[0_0_0_7px_rgba(141,140,255,.12),0_0_30px_rgba(141,140,255,.8)]"
+                  />
+
+                  <div className="pointer-events-none absolute left-[-120px] top-[52px] z-10 h-px w-[710px]">
+                    {Array.from({ length: 5 }).map((_, index) => (
                       <span
-                        className="h-2.5 w-2.5 rounded-full shadow-[0_0_20px_currentColor]"
-                        style={{ backgroundColor: item.accent, color: item.accent }}
+                        key={index}
+                        className="trace-line absolute left-0 top-0 h-px w-[142px] origin-left scale-x-0 bg-white/30 opacity-0"
+                        style={{ transform: `translateX(${index * 142}px)` }}
                       />
-                      <p className="mt-4 text-[20px] font-semibold tracking-[.06em]">{item.label}</p>
-                      <p className="mt-2 text-[12px] font-medium uppercase tracking-[.12em] text-white/30">{item.sub}</p>
-                    </button>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="absolute left-1/2 top-1/2 h-[330px] w-[330px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#7d7cff]/18" />
-            <div className="absolute left-1/2 top-1/2 h-[410px] w-[410px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[.05]" />
-
-            <div className="absolute bottom-5 left-5 right-5 z-20">
-              <div className="flex gap-2 overflow-x-auto rounded-[18px] border border-white/10 bg-black/25 p-2.5 backdrop-blur [scrollbar-width:none]">
-                {faces.map((item, index) => (
+            <div className="absolute bottom-5 left-5 right-5 z-30">
+              <div className="flex gap-2 overflow-x-auto rounded-[18px] border border-white/10 bg-black/28 p-2.5 backdrop-blur [scrollbar-width:none]">
+                {layers.map((item, index) => (
                   <button
                     key={item.id}
                     onClick={() => setActive(index)}
@@ -307,60 +402,57 @@ export function WatchdogArchitecture3D() {
             </div>
           </section>
 
-          <aside className="flex min-h-[590px] flex-col rounded-[30px] border border-white/10 bg-[#14151a] p-5 md:p-6">
+          <aside className="flex min-h-[600px] flex-col rounded-[30px] border border-white/10 bg-[#14151a] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[13px] font-semibold uppercase tracking-[.09em] text-white/28">{face.index} / 05</p>
-                <p className="mt-3 text-[14px] font-semibold" style={{ color: face.accent }}>{face.eyebrow}</p>
+                <p className="text-[13px] font-semibold uppercase tracking-[.09em] text-white/28">{current.index} / 05</p>
+                <p className="mt-3 text-[14px] font-semibold" style={{ color: current.accent }}>{current.eyebrow}</p>
               </div>
               <span
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: `${face.accent}18`, color: face.accent }}
+                style={{ backgroundColor: `${current.accent}18`, color: current.accent }}
               >
-                <FaceIcon size={20} />
+                <CurrentIcon size={20} />
               </span>
             </div>
 
-            <h2 className="mt-4 text-[30px] font-semibold leading-[1.08] tracking-[-0.045em]">{face.title}</h2>
-            <p className="mt-4 text-[16px] leading-7 text-white/55">{face.body}</p>
+            <h2 className="mt-4 text-[30px] font-semibold leading-[1.08] tracking-[-0.045em]">{current.title}</h2>
+            <p className="mt-4 text-[16px] leading-7 text-white/55">{current.body}</p>
 
             <div className="mt-6 space-y-3">
               <div className="rounded-[18px] border border-white/10 bg-white/[.035] p-4">
                 <p className="text-[13px] font-medium text-white/28">Where it sits</p>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/78">{face.sits}</p>
+                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/78">{current.sits}</p>
               </div>
               <div className="rounded-[18px] border border-white/10 bg-white/[.035] p-4">
-                <p className="text-[13px] font-medium text-white/28">What it sees</p>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/78">{face.sees}</p>
+                <p className="text-[13px] font-medium text-white/28">Receives</p>
+                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/78">{current.receives}</p>
               </div>
               <div className="rounded-[18px] border border-white/10 bg-white/[.035] p-4">
-                <p className="text-[13px] font-medium text-white/28">What it does</p>
-                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/78">{face.does}</p>
+                <p className="text-[13px] font-medium text-white/28">Produces</p>
+                <p className="mt-1.5 text-[15px] font-semibold leading-6 text-white/78">{current.produces}</p>
               </div>
             </div>
 
             <div className="mt-auto pt-5">
-              {active < faces.length - 1 ? (
+              {active < layers.length - 1 ? (
                 <button
-                  onClick={() => setActive((value) => Math.min(faces.length - 1, value + 1))}
+                  onClick={() => setActive((value) => Math.min(layers.length - 1, value + 1))}
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-[14px] font-semibold text-[#111318] transition hover:bg-[#eef0f3]"
                 >
-                  Rotate to next face
+                  Peel next layer
                   <ArrowRight size={16} />
                 </button>
               ) : (
-                <div className="rounded-[18px] border border-[#7d7cff]/22 bg-[#7d7cff]/[.07] p-4">
-                  <div className="flex items-center gap-2 text-[#a9a7ff]">
+                <div className="rounded-[18px] border border-[#8d8cff]/22 bg-[#8d8cff]/[.07] p-4">
+                  <div className="flex items-center gap-2 text-[#b4b3ff]">
                     <Sparkles size={15} />
-                    <p className="text-[14px] font-semibold">Try the same pattern on other workflows</p>
+                    <p className="text-[14px] font-semibold">Now run it across other workflows</p>
                   </div>
                   <p className="mt-2 text-[14px] leading-6 text-white/42">
-                    The use-case page runs mimicked finance, onboarding, fulfilment, and routing automations.
+                    Use cases applies the same Watchdog pattern to finance, onboarding, fulfilment, and routing automations.
                   </p>
-                  <Link
-                    href="/use-cases"
-                    className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-white"
-                  >
+                  <Link href="/use-cases" className="mt-3 inline-flex items-center gap-2 text-[14px] font-semibold text-white">
                     Open Watchdog use cases
                     <ArrowRight size={15} />
                   </Link>
