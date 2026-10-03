@@ -125,6 +125,24 @@ export function WatchdogUseCases() {
     }
   }, [activeId]);
 
+  useEffect(() => {
+    const cards = shellRef.current?.querySelectorAll(".use-case-card");
+    if (!cards?.length) return;
+
+    const floating = animate(cards, {
+      translateY: [0, -5, 0],
+      rotate: [0, 0.25, 0],
+      delay: stagger(180),
+      duration: 4200,
+      loop: true,
+      ease: "inOut(2)",
+    });
+
+    return () => {
+      floating.cancel();
+    };
+  }, []);
+
   const play = async () => {
     if (playing) return;
     setPlaying(true);
@@ -151,7 +169,7 @@ export function WatchdogUseCases() {
       <section className="grid gap-7 lg:grid-cols-[.95fr_1.05fr] lg:items-end">
         <div>
           <p className="text-[16px] font-semibold text-[var(--blue)]">Beyond one workflow</p>
-          <h1 className="mt-3 max-w-[790px] text-[42px] font-semibold leading-[1.02] tracking-[-0.06em] md:text-[56px]">
+          <h1 className="mt-3 max-w-[790px] text-[38px] font-semibold leading-[1.02] tracking-[-0.055em] md:text-[48px]">
             Watchdog is a pattern for any automation where the business outcome matters more than a green API.
           </h1>
         </div>
@@ -160,7 +178,7 @@ export function WatchdogUseCases() {
         </p>
       </section>
 
-      <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cases.map((item, index) => {
           const selected = item.id === activeId;
           return (
@@ -169,7 +187,7 @@ export function WatchdogUseCases() {
               onClick={() => setActiveId(item.id)}
               className={
                 selected
-                  ? "use-case-card relative min-h-[182px] overflow-hidden rounded-[24px] border border-[#cfd4ff] bg-white p-5 text-left shadow-[0_18px_55px_rgba(79,92,255,.10)]"
+                  ? "use-case-card relative min-h-[168px] overflow-hidden rounded-[24px] border border-[#cfd4ff] bg-white p-5 text-left shadow-[0_18px_55px_rgba(79,92,255,.10)]"
                   : "use-case-card relative min-h-[182px] overflow-hidden rounded-[24px] border border-[var(--hairline)] bg-white p-5 text-left transition hover:-translate-y-1 hover:border-[#cfd4dc] hover:shadow-[0_14px_38px_rgba(17,19,24,.06)]"
               }
             >
@@ -177,7 +195,7 @@ export function WatchdogUseCases() {
                 <span className="font-mono text-[12px] font-semibold text-[#8a929d]">0{index + 1}</span>
                 <span className={selected ? "h-2.5 w-2.5 rounded-full bg-[#5865ff]" : "h-2.5 w-2.5 rounded-full bg-[#d7dbe0]"} />
               </div>
-              <p className="mt-7 text-[14px] font-semibold text-[#858d98]">{item.eyebrow}</p>
+              <p className="mt-5 text-[14px] font-semibold text-[#858d98]">{item.eyebrow}</p>
               <p className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-[var(--ink)]">{item.label}</p>
               <p className="mt-3 text-[15px] leading-6 text-[var(--copy)]">{item.impact}</p>
             </button>
@@ -210,9 +228,9 @@ export function WatchdogUseCases() {
             </button>
           </div>
 
-          <div className="relative min-h-[470px] overflow-hidden p-6 md:p-8">
+          <div className="relative min-h-[430px] overflow-hidden p-6 md:p-8">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(88,101,255,.15),transparent_32%)]" />
-            <div className="relative flex min-h-[410px] flex-col justify-center">
+            <div className="relative flex min-h-[370px] flex-col justify-center">
               <div className="relative grid gap-3 md:grid-cols-5">
                 <div className="pointer-events-none absolute left-[8%] right-[8%] top-[42px] hidden h-px bg-white/10 md:block" />
                 {active.steps.map((step, index) => {
