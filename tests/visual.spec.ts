@@ -61,7 +61,7 @@ test("the architecture route is an Anime.js interactive cube with stable navigat
 
   await expect(page.locator("canvas")).toHaveCount(0);
   await expect(page.getByRole("link", { name: "3D" })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: "Use cases" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Use cases", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "WATCHDOG face" })).toBeVisible();
 
   await page.getByRole("button", { name: "Rotate to next face" }).click();
@@ -80,9 +80,9 @@ test("the architecture route is an Anime.js interactive cube with stable navigat
   await expect(page.getByText("Evidence + replay")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Watchdog use cases" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Use cases" }).click();
+  await page.getByRole("link", { name: "Use cases", exact: true }).click();
   await expect(page).toHaveURL(/\/use-cases/);
-  await expect(page.getByRole("link", { name: "Use cases" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Use cases", exact: true })).toHaveAttribute("aria-current", "page");
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
