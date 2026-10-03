@@ -11,6 +11,7 @@ import {
   CircleUserRound,
   LayoutDashboard,
   LoaderCircle,
+  Route,
   Search,
   Settings2,
   Sparkles,
