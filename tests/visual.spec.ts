@@ -27,7 +27,7 @@ test("the full Watchdog story stays understandable when the user controls the pa
   await expect(page).toHaveURL(/\/watchdog/);
   await expect(page.getByText("Sidecar control plane")).toBeVisible();
   await expect(page.getByText("It does not fix code itself")).toBeVisible();
-  await expect(page.getByText("Expired credentials or downtime can be signals", { exact: false })).toBeVisible();
+  await expect(page.getByText("API credentials and uptime can be signals", { exact: false })).toBeVisible();
 
   for (let i = 0; i < 5; i += 1) {
     await page.getByRole("button", { name: "Inspect next boundary" }).click();
