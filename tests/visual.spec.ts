@@ -47,7 +47,7 @@ test("the architecture page exposes a real interactive 3D deep dive", async ({ p
 
   await page.getByRole("button", { name: "Guard layer" }).click();
   await expect(page.getByRole("complementary").getByText("Fail closed")).toBeVisible();
-  await expect(page.getByText("Slack alerts and follow-up tasks", { exact: false })).toBeVisible();
+  await expect(page.getByRole("complementary").getByText("Slack alerts and follow-up tasks are blocked", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Trace one event" }).click();
   await expect(page.getByRole("button", { name: "Compress layers" })).toBeVisible();
