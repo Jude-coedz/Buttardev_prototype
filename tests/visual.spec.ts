@@ -46,7 +46,7 @@ test("the architecture page exposes a real interactive 3D deep dive", async ({ p
   await expect(page.locator("canvas")).toBeVisible();
 
   await page.getByRole("button", { name: "Guard layer" }).click();
-  await expect(page.getByText("Fail closed")).toBeVisible();
+  await expect(page.getByRole("complementary").getByText("Fail closed")).toBeVisible();
   await expect(page.getByText("Slack alerts and follow-up tasks", { exact: false })).toBeVisible();
 
   await page.getByRole("button", { name: "Trace one event" }).click();
