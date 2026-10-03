@@ -14,7 +14,7 @@ export default function HomePage() {
     <DemoFrame>
       <div className="bg-[#eef2eb] text-[#162019]">
         <header className="border-b border-black/[0.07]">
-          <div className="mx-auto flex h-[76px] max-w-[1380px] items-center justify-between px-5 md:px-8">
+          <div className="mx-auto flex h-[64px] max-w-[1380px] items-center justify-between px-5 md:px-8">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#162019] text-white">
                 <Sparkles size={18} />
@@ -31,22 +31,22 @@ export default function HomePage() {
         </header>
 
         <main>
-          <section className="mx-auto grid min-h-[690px] max-w-[1380px] items-center gap-12 px-5 py-14 md:px-8 lg:grid-cols-[1.05fr_.95fr] lg:py-20">
+          <section className="mx-auto grid min-h-[calc(100dvh-120px)] max-w-[1380px] items-center gap-8 px-5 py-7 md:px-8 lg:grid-cols-[1.05fr_.95fr] lg:py-8">
             <div className="max-w-[720px]">
               <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#ccd5cb] bg-white/60 px-3 py-2 text-[14px] font-medium text-[#516058]">
                 <MapPin size={15} />
                 Birmingham · trusted local cleaning
               </div>
 
-              <h1 className="text-[52px] font-semibold leading-[.98] tracking-[-0.065em] text-[#121914] sm:text-[66px] lg:text-[82px]">
+              <h1 className="text-[46px] font-semibold leading-[.98] tracking-[-0.06em] text-[#121914] sm:text-[58px] lg:text-[70px]">
                 Come home to done.
               </h1>
 
-              <p className="mt-7 max-w-[600px] text-[19px] leading-8 text-[#566159] md:text-[20px]">
+              <p className="mt-5 max-w-[600px] text-[18px] leading-7 text-[#566159] md:text-[20px]">
                 Reliable home cleaning without the back-and-forth. Tell us what you need and we’ll confirm the right team and time.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-5">
+              <div className="mt-6 flex flex-wrap gap-4">
                 {[
                   "Fully vetted cleaners",
                   "Simple scheduling",
@@ -61,7 +61,7 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <div className="mt-11 flex items-center gap-5 border-t border-black/[0.08] pt-7">
+              <div className="mt-7 flex items-center gap-5 border-t border-black/[0.08] pt-5">
                 <div className="flex -space-x-2">
                   {["A", "J", "M", "R"].map((letter, index) => (
                     <span
@@ -88,7 +88,7 @@ export default function HomePage() {
           </section>
 
           <section id="services" className="bg-[#162019] text-white">
-            <div className="mx-auto grid max-w-[1380px] gap-10 px-5 py-16 md:px-8 lg:grid-cols-[.75fr_1.25fr] lg:py-20">
+            <div className="mx-auto grid max-w-[1380px] gap-10 px-5 py-12 md:px-8 lg:grid-cols-[.75fr_1.25fr] lg:py-14">
               <div>
                 <p className="text-[15px] font-medium text-[#9eb1a3]">Built around the next step</p>
                 <h2 className="mt-3 max-w-md text-[38px] font-semibold leading-[1.06] tracking-[-0.05em] md:text-[46px]">
