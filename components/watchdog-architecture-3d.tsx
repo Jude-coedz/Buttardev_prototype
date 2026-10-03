@@ -633,7 +633,7 @@ export function WatchdogArchitecture3D() {
 
   return (
     <div className="min-h-[calc(100dvh-56px)] bg-[#080b10] text-white">
-      <div className="mx-auto max-w-[1540px] px-4 py-4 md:px-7">
+      <div className="mx-auto max-w-[1540px] px-4 py-3 md:px-7">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/recovery" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[.04] text-white/65 transition hover:bg-white/[.08] hover:text-white" aria-label="Back to recovery">
@@ -664,7 +664,7 @@ export function WatchdogArchitecture3D() {
           </div>
         </div>
 
-        <div className="grid h-[calc(100dvh-132px)] min-h-[540px] max-h-[860px] gap-4 xl:grid-cols-[1.35fr_.65fr]">
+        <div className="grid h-[calc(100dvh-150px)] min-h-[500px] max-h-[760px] gap-4 xl:grid-cols-[1.35fr_.65fr]">
           <section className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[#0b1018]">
             <div className="pointer-events-none absolute left-4 top-4 z-20 flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/28 px-3 py-2 text-[13px] font-medium text-white/52 backdrop-blur">
@@ -695,7 +695,7 @@ export function WatchdogArchitecture3D() {
             </div>
           </section>
 
-          <aside className="flex min-h-0 flex-col rounded-[26px] border border-white/10 bg-[#10151e] p-5 md:p-6">
+          <aside className="flex min-h-0 flex-col overflow-y-auto rounded-[26px] border border-white/10 bg-[#10151e] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[14px] font-semibold text-white/38">Selected physical module</p>
