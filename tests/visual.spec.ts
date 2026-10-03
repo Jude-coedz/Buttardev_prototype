@@ -1,57 +1,56 @@
 import { expect, test } from "@playwright/test";
 
-test("guided watchdog journey, incident and recovery are coherent", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1050 });
+test("the watched journey is understandable end to end", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto("/");
 
-  await expect(page.getByText("Journey Watchdog", { exact: true }).first()).toBeVisible();
-  await expect(
-    page.getByRole("heading", {
-      name: "Prove the customer journey still works after the automation ships.",
-    }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "See exactly what Watchdog is watching." })).toBeVisible();
+  await expect(page.getByText("BrightHome").first()).toBeVisible();
+  await expect(page.getByText("Journey Watchdog").first()).toBeVisible();
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(overflow).toBeLessThanOrEqual(1);
 
-  await page.getByRole("button", { name: "Watch a live check" }).click();
+  await page.getByRole("button", { name: "Start with the enquiry" }).click();
+  await expect(page.getByText("Enquiry received")).toBeVisible();
 
-  await expect(
-    page.getByRole("heading", {
-      name: "Watch the journey fail in a way uptime monitoring would miss.",
-    }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText("96%")).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "Owner assignment failed" })).toBeVisible({
-    timeout: 8_000,
-  });
-  await expect(page.getByText("Synthetic only")).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText("crm_demo_1842")).toBeVisible();
+
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText("No owner")).toBeVisible();
   await expect(page.getByText("owner_id = null")).toBeVisible();
 
-  await page.getByRole("button", { name: "Apply fix & replay" }).click();
-  await expect(page.getByText("All six business assertions passed.")).toBeVisible({
-    timeout: 8_000,
-  });
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText("Business outcome failed at routing")).toBeVisible();
+  await expect(page.getByText(/Watchdog blocked an unowned lead/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Fix mapping & replay" }).click();
+  await expect(page.getByText("Saim · Birmingham")).toBeVisible();
+  await expect(page.getByText("Recovery verified without a duplicate lead")).toBeVisible();
 });
 
-test("under-the-hood view explains architecture and data boundaries", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1050 });
+test("the spatial model can be inspected layer by layer", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Under the hood" }).click();
-  await expect(page.getByRole("heading", { name: "One watchdog run, picked apart." })).toBeVisible();
+  await page.getByRole("button", { name: "System model" }).click();
+  await expect(page.getByRole("heading", { name: "Pull Watchdog apart." })).toBeVisible();
 
-  await page.getByRole("button", { name: /Guard rails/ }).click();
-  await expect(page.getByText("Stop unsafe actions")).toBeVisible();
-  await expect(page.getByText(/Prevents downstream actions/)).toBeVisible();
+  await page.getByRole("button", { name: /Guard layer/ }).click();
+  await expect(page.getByText("Stops bad state spreading")).toBeVisible();
+  await expect(page.getByText("Slack + task blocked")).toBeVisible();
 
-  await page.getByRole("button", { name: "Trace one check" }).click();
-  await expect(page.getByText("Evidence + replay")).toBeVisible();
+  await page.getByRole("button", { name: "Trace a check" }).click();
+  await expect(page.getByText("Evidence + recovery")).toBeVisible();
 });
 
-test("mobile navigation exposes trust controls", async ({ page }) => {
+test("mobile keeps the walkthrough readable", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
@@ -60,14 +59,7 @@ test("mobile navigation exposes trust controls", async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(1);
 
-  await expect(page.getByRole("navigation")).toBeVisible();
-  await page.getByRole("button", { name: "Trust & controls" }).click();
-
-  await expect(
-    page.getByRole("heading", {
-      name: "Prove the journey without borrowing the customer's identity.",
-    }),
-  ).toBeVisible();
-  await expect(page.getByText("Implemented in this prototype")).toBeVisible();
-  await expect(page.getByText("Production guardrails still required")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Live system" })).toBeVisible();
+  await page.getByRole("button", { name: "Start with the enquiry" }).click();
+  await expect(page.getByText("Enquiry received")).toBeVisible();
 });
