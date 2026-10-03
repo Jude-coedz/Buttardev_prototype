@@ -581,7 +581,7 @@ export function WatchdogArchitecture3D() {
           </button>
         </div>
 
-        <div className="grid h-[calc(100dvh-145px)] min-h-[520px] max-h-[790px] gap-4 xl:grid-cols-[1.3fr_.7fr]">
+        <div className="grid h-[calc(100dvh-185px)] min-h-[520px] max-h-[750px] gap-4 xl:grid-cols-[1.3fr_.7fr]">
           <section className="relative overflow-hidden rounded-[28px] border border-[#dedfe2] bg-[#f3f4f6] shadow-[0_28px_90px_rgba(17,19,24,.06)]">
             <div className="pointer-events-none absolute left-4 top-4 z-20 flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/85 px-3 py-2 text-[13px] font-medium text-[#626a75] shadow-sm backdrop-blur">
