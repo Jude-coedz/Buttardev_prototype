@@ -34,6 +34,7 @@ export function WatchdogInspection() {
   const shellRef = useRef<HTMLDivElement>(null);
   const [run, setRun] = useState<JourneyRun | null>(null);
   const [active, setActive] = useState(-1);
+  const [revealed, setRevealed] = useState(-1);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +53,7 @@ export function WatchdogInspection() {
       for (let index = 0; index < trace.length; index += 1) {
         if (cancelled) return;
         setActive(index);
+        setRevealed(index);
 
         window.setTimeout(() => {
           const node = shellRef.current?.querySelector(`[data-trace="${index}"]`);
@@ -105,8 +107,8 @@ export function WatchdogInspection() {
             </div>
 
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.05] px-3 py-2 text-[13px] font-medium text-white/65">
-              {run ? <CircleDot size={14} className="text-[#4ee0a0]" /> : <LoaderCircle size={14} className="animate-spin text-[#8f98ff]" />}
-              {run ? "Inspection complete" : "Inspecting handoffs"}
+              {revealed === trace.length - 1 ? <CircleDot size={14} className="text-[#4ee0a0]" /> : <LoaderCircle size={14} className="animate-spin text-[#8f98ff]" />}
+              {revealed === trace.length - 1 ? "Inspection complete" : "Inspecting handoffs"}
             </span>
           </div>
         </div>
@@ -130,11 +132,12 @@ export function WatchdogInspection() {
             <div className="relative grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
               {trace.map((item, index) => {
                 const Icon = item.icon;
-                const step = run?.steps[index];
+                const visible = index <= revealed;
+                const step = visible ? run?.steps[index] : undefined;
                 const isFailed = step && !step.ok && !step.blocked;
                 const isBlocked = step?.blocked;
                 const isPassed = step?.ok;
-                const isActive = active === index && !run;
+                const isActive = active === index && visible;
 
                 return (
                   <div
@@ -196,7 +199,7 @@ export function WatchdogInspection() {
             </div>
           </div>
 
-          {failed ? (
+          {failed && revealed === trace.length - 1 ? (
             <div className="mt-8 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
               <div className="rounded-[24px] border border-[#d94b63]/35 bg-[#d94b63]/[.075] p-6 md:p-7">
                 <div className="flex items-start gap-4">
@@ -245,7 +248,7 @@ export function WatchdogInspection() {
         </div>
       </section>
 
-      {failed ? (
+      {failed && revealed === trace.length - 1 ? (
         <div className="mt-7 flex flex-col gap-4 rounded-[24px] border border-[var(--hairline)] bg-white p-5 md:flex-row md:items-center md:justify-between md:p-6">
           <div>
             <p className="text-[17px] font-semibold">Likely regression: routing field changed upstream.</p>
