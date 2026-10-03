@@ -51,36 +51,43 @@ test("the full Watchdog story stays understandable when the user controls the pa
   await expect(page.getByText("Saim · Birmingham")).toBeVisible();
 });
 
-test("the architecture route is now an Anime.js system anatomy rather than a 3D render", async ({ page }) => {
+test("the architecture route is an Anime.js interactive cube with stable navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/architecture");
 
   await expect(
-    page.getByRole("heading", { name: "Watchdog is a layer around the workflow, not another tool inside it." }),
+    page.getByRole("heading", { name: "Rotate the cube to understand the Watchdog system." }),
   ).toBeVisible();
 
   await expect(page.locator("canvas")).toHaveCount(0);
-  await expect(page.getByText("CLIENT AUTOMATION · unchanged")).toBeVisible();
-  await expect(page.getByText("control plane")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Synthetic probe starts outside" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "3D" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Use cases" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "WATCHDOG face" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Next layer" }).click();
-  await expect(page.getByText("Observe handoffs")).toBeVisible();
+  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await expect(page.getByText("Synthetic probe")).toBeVisible();
 
-  await page.getByRole("button", { name: "Next layer" }).click();
-  await expect(page.getByText("Assert the contract")).toBeVisible();
+  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await expect(page.getByText("Handoff observer")).toBeVisible();
 
-  await page.getByRole("button", { name: "Next layer" }).click();
-  await expect(page.getByText("Guard a side effect")).toBeVisible();
+  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await expect(page.getByText("Contract engine")).toBeVisible();
 
-  await page.getByRole("button", { name: "Next layer" }).click();
-  await expect(page.getByRole("complementary").getByText("Evidence + replay")).toBeVisible();
+  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await expect(page.getByText("Guard layer")).toBeVisible();
+
+  await page.getByRole("button", { name: "Rotate to next face" }).click();
+  await expect(page.getByText("Evidence + replay")).toBeVisible();
   await expect(page.getByRole("link", { name: "Open Watchdog use cases" })).toBeVisible();
 
-  const overflow = await page.evaluate(() => ({
-    x: document.documentElement.scrollWidth - window.innerWidth,
-  }));
-  expect(overflow.x).toBeLessThanOrEqual(1);
+  await page.getByRole("link", { name: "Use cases" }).click();
+  await expect(page).toHaveURL(/\/use-cases/);
+  await expect(page.getByRole("link", { name: "Use cases" })).toHaveAttribute("aria-current", "page");
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
 });
 
 test("use cases provide runnable mimicked automations", async ({ page }) => {
