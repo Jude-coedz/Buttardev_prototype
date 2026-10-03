@@ -21,24 +21,29 @@ import {
 export function CrmLeadView() {
   const router = useRouter();
   const ownerRef = useRef<HTMLDivElement>(null);
-  const [resolving, setResolving] = useState(true);
+  const [resolving, setResolving] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setResolving(false);
-      window.setTimeout(() => {
-        if (ownerRef.current) {
-          animate(ownerRef.current, {
-            scale: [0.985, 1.025, 1],
-            duration: 560,
-            ease: "out(4)",
-          });
-        }
-      }, 0);
-    }, 850);
+    if (!checked || resolving) return;
+    window.setTimeout(() => {
+      if (ownerRef.current) {
+        animate(ownerRef.current, {
+          scale: [0.985, 1.035, 1],
+          duration: 620,
+          ease: "out(4)",
+        });
+      }
+    }, 0);
+  }, [checked, resolving]);
 
-    return () => window.clearTimeout(timer);
-  }, []);
+  const runRoutingCheck = async () => {
+    if (resolving || checked) return;
+    setResolving(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 950));
+    setResolving(false);
+    setChecked(true);
+  };
 
   return (
     <div className="mx-auto max-w-[1480px] px-4 py-7 md:px-7 md:py-9">
@@ -155,9 +160,9 @@ export function CrmLeadView() {
                   <div
                     ref={ownerRef}
                     className={
-                      resolving
-                        ? "mt-7 rounded-2xl border border-[#dfe3e8] bg-[#f8f9fa] p-5"
-                        : "mt-7 rounded-2xl border border-[#efb7c1] bg-[#fff5f7] p-5"
+                      checked
+                        ? "mt-7 rounded-2xl border border-[#efb7c1] bg-[#fff5f7] p-5"
+                        : "mt-7 rounded-2xl border border-[#dfe3e8] bg-[#f8f9fa] p-5"
                     }
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -167,17 +172,22 @@ export function CrmLeadView() {
                           {resolving ? (
                             <>
                               <LoaderCircle size={18} className="animate-spin text-[var(--blue)]" />
-                              <span className="text-[18px] font-semibold text-[#313740]">Resolving Birmingham owner…</span>
+                              <span className="text-[18px] font-semibold text-[#313740]">Running routing-v4…</span>
                             </>
-                          ) : (
+                          ) : checked ? (
                             <>
                               <TriangleAlert size={19} className="text-[var(--rose)]" />
                               <span className="text-[20px] font-semibold tracking-[-0.025em] text-[#9f3043]">Unassigned</span>
                             </>
+                          ) : (
+                            <>
+                              <Route size={19} className="text-[#5865ff]" />
+                              <span className="text-[18px] font-semibold text-[#313740]">Owner routing not evaluated yet</span>
+                            </>
                           )}
                         </div>
                       </div>
-                      {!resolving ? (
+                      {checked ? (
                         <div className="rounded-xl bg-white px-4 py-3 font-mono text-[14px] leading-6 text-[#5d6672]">
                           expected: <span className="text-[#2f3944]">saim.birmingham</span><br />
                           received: <span className="font-semibold text-[#b73d52]">null</span>
@@ -185,6 +195,17 @@ export function CrmLeadView() {
                       ) : null}
                     </div>
                   </div>
+
+                  {!checked ? (
+                    <button
+                      onClick={runRoutingCheck}
+                      disabled={resolving}
+                      className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-[#171a21] px-4 text-[15px] font-semibold text-white transition hover:bg-[#2b3038] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {resolving ? <LoaderCircle size={16} className="animate-spin" /> : <Route size={16} />}
+                      {resolving ? "Evaluating routing rule" : "Run owner-routing rule"}
+                    </button>
+                  ) : null}
                 </section>
 
                 <aside className="rounded-[22px] border border-[#e0e4e9] bg-white p-5 md:p-6">
@@ -195,12 +216,12 @@ export function CrmLeadView() {
                       ["14:32:01", "Website enquiry received", "Webhook accepted"],
                       ["14:32:02", "AI qualification complete", "4 fields captured"],
                       ["14:32:03", "Lead created", "crm_demo_1842"],
-                      ["14:32:03", resolving ? "Owner routing running" : "Owner routing completed", resolving ? "routing-v4" : "owner_id = null"],
+                      ["14:32:03", resolving ? "Owner routing running" : checked ? "Owner routing completed" : "Owner routing waiting", resolving ? "routing-v4 evaluating…" : checked ? "owner_id = null" : "Click Run owner-routing rule"],
                     ].map(([time, title, detail], index) => (
                       <div key={title} className="grid grid-cols-[14px_1fr] gap-3">
                         <div className="relative flex justify-center">
                           <span className={
-                            index === 3 && !resolving
+                            index === 3 && checked
                               ? "mt-1.5 h-2.5 w-2.5 rounded-full bg-[var(--rose)]"
                               : "mt-1.5 h-2.5 w-2.5 rounded-full bg-[#8a95a2]"
                           } />
@@ -210,7 +231,7 @@ export function CrmLeadView() {
                           <p className="font-mono text-[14px] text-[#7f8791]">{time}</p>
                           <p className="mt-1 text-[15px] font-semibold text-[#343a43]">{title}</p>
                           <p className={
-                            index === 3 && !resolving
+                            index === 3 && checked
                               ? "mt-1 text-[15px] font-semibold text-[var(--rose)]"
                               : "mt-1 text-[15px] text-[#707986]"
                           }>{detail}</p>
@@ -221,7 +242,7 @@ export function CrmLeadView() {
                 </aside>
               </div>
 
-              {!resolving ? (
+              {checked ? (
                 <div className="mt-5 flex flex-col gap-4 rounded-[22px] border border-[#dae0e6] bg-[#171a21] p-5 text-white md:flex-row md:items-center md:justify-between md:p-6">
                   <div>
                     <p className="text-[17px] font-semibold">FlowCRM still reports a healthy service.</p>
